@@ -43,7 +43,12 @@ http:
 
 windows:
   tracked_scan_days: 1                      # "posted today" window
-  full_sweep_days: 1
+  # Discovery runs wider than the reporting window on purpose. The public index knows when it
+  # first SAW a posting, which lags the employer's own date — in a sample of 25, 15 postings
+  # indexed "today" had actually been published 1-6 days earlier. Enrichment reads the real
+  # date and re-applies the window, so a wide discovery net costs nothing but catches postings
+  # the index was late to see.
+  full_sweep_days: 3
   remote_boards_days: 0                     # 0 = today only
   lookback_days: 7                          # secondary "last N days" sheet
 

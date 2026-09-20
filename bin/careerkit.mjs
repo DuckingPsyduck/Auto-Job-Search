@@ -11,11 +11,13 @@
  */
 import { loadConfig, today } from '../src/node/config.mjs';
 import { runSweep } from '../src/node/sweep.mjs';
+import { runEnrich } from '../src/node/enrich.mjs';
 
 const USAGE = `careerkit <command> [options]
 
 Commands:
   sweep      discover postings from the public dataset, filter and rank them
+  enrich     fetch each survivor's record from the employer's ATS
   config     print the resolved configuration (paths, windows, thresholds)
 
 Options:
@@ -23,6 +25,8 @@ Options:
   --date <date>     run date, YYYY-MM-DD (default: today, from the system clock)
   --since <days>    discovery window in days (default: from config)
   --chunks <n>      read only the first N dataset chunks (for a quick check)
+  --limit <n>       enrich at most N postings
+  --input <path>    enrich a specific ranked file
   --quiet           only print the summary line
   -h, --help        this text
 `;
@@ -65,6 +69,17 @@ async function main() {
         `dropped ${result.counts.dropped}\n${lanes}\n${result.out}\n`
       );
       return result.counts.shortlist > 0 ? 0 : 0;
+    }
+    case 'enrich': {
+      const result = await runEnrich(cfg, {
+        date: args.date || today(),
+        input: args.input,
+        limit: args.limit ? Number(args.limit) : undefined,
+        log,
+      });
+      const after = Object.entries(result.after).map(([verdict, n]) => `${verdict} ${n}`).join(' | ');
+      process.stdout.write(`${result.date} | ${after}\n${result.out}\n`);
+      return 0;
     }
     case 'config': {
       process.stdout.write(JSON.stringify({

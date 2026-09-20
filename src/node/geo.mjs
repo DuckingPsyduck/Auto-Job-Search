@@ -93,7 +93,10 @@ export class Geo {
     const states = list.map(l => this.domestic(l));
     const domesticLocs = list.filter((_, i) => states[i] === 'yes');
 
-    if (states.every(s => s === 'no')) return { rank: 4, domestic: 'no' };
+    // Recognised foreign locations with no domestic evidence anywhere: treat the posting as
+    // foreign even if some entries are unknown ("Sydney; Melbourne; Perth" — Perth alone is
+    // not in the term list, but the posting clearly is not domestic).
+    if (!domesticLocs.length && states.includes('no')) return { rank: 4, domestic: 'no' };
     if (this.isRemote(all)) {
       if (domesticLocs.length) return { rank: 1, domestic: 'yes' };
       // "Remote" with no domestic evidence and no foreign marker: needs a human.

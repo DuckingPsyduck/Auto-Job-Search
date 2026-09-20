@@ -2,32 +2,218 @@
   "_note": "Shared fixtures for the Node and Python location classifiers. home_state is TX. Each case: location string(s), expected domestic verdict, expected rank. Cases marked 'regression' record a real leak we fixed — see docs/DECISIONS.md.",
   "home_state": "TX",
   "cases": [
-    { "locs": ["Remote (Any State)"], "domestic": "yes", "rank": 1 },
-    { "locs": ["Nationwide Remote"], "domestic": "yes", "rank": 1 },
-    { "locs": ["6314 Remote/Teleworker US"], "domestic": "yes", "rank": 1, "regression": "trailing US token" },
-    { "locs": ["Remote - USA - CA"], "domestic": "yes", "rank": 1 },
-    { "locs": ["IN Remote"], "domestic": "yes", "rank": 1, "note": "Indiana, not India" },
-    { "locs": ["USA - Seattle, WA"], "domestic": "yes", "rank": 2 },
-    { "locs": ["US-AL-Redstone Arsenal"], "domestic": "yes", "rank": 2 },
-    { "locs": ["Poughkeepsie, NY"], "domestic": "yes", "rank": 2 },
-    { "locs": ["Jersey City", "Charlotte", "Plano"], "domestic": "yes", "rank": 2, "note": "one non-home-state site is enough" },
-    { "locs": ["US - TX, Houston"], "domestic": "yes", "rank": 3 },
-    { "locs": ["Plano"], "domestic": "yes", "rank": 3 },
-    { "locs": ["Indianapolis"], "domestic": "yes", "rank": 2, "regression": "contains 'india'" },
-    { "locs": ["United States-New Mexico-Albuquerque"], "domestic": "yes", "rank": 2, "regression": "contains 'mexico'" },
-    { "locs": ["Not specified"], "domestic": "check", "rank": 5, "note": "dataset placeholder" },
-    { "locs": ["Lithuania - Vilnius"], "domestic": "no", "rank": 4, "regression": "reached a US shortlist 2026-09-18" },
-    { "locs": ["Kyiv"], "domestic": "no", "rank": 4, "regression": "reached a US shortlist 2026-09-18" },
-    { "locs": ["Budapest, Hungary"], "domestic": "no", "rank": 4, "regression": "reached a US shortlist 2026-09-18" },
-    { "locs": ["Knutsford, Radbroke Hall"], "domestic": "no", "rank": 4 },
-    { "locs": ["Rome (KIT51637) Spaces Eur Laurentina"], "domestic": "no", "rank": 4 },
-    { "locs": ["Asia"], "domestic": "no", "rank": 4 },
-    { "locs": ["Mississauga - Avebury"], "domestic": "no", "rank": 4 },
-    { "locs": ["Remote - Bulgaria"], "domestic": "no", "rank": 4, "note": "remote but not eligible" },
-    { "locs": ["Remote, Global"], "domestic": "check", "rank": 5 },
-    { "locs": ["Headquarters"], "domestic": "check", "rank": 5 },
-    { "locs": ["2 Locations"], "domestic": "check", "rank": 5 },
-    { "locs": [], "domestic": "check", "rank": 5 }
+    {
+      "locs": [
+        "Remote (Any State)"
+      ],
+      "domestic": "yes",
+      "rank": 1
+    },
+    {
+      "locs": [
+        "Nationwide Remote"
+      ],
+      "domestic": "yes",
+      "rank": 1
+    },
+    {
+      "locs": [
+        "6314 Remote/Teleworker US"
+      ],
+      "domestic": "yes",
+      "rank": 1,
+      "regression": "trailing US token"
+    },
+    {
+      "locs": [
+        "Remote - USA - CA"
+      ],
+      "domestic": "yes",
+      "rank": 1
+    },
+    {
+      "locs": [
+        "IN Remote"
+      ],
+      "domestic": "yes",
+      "rank": 1,
+      "note": "Indiana, not India"
+    },
+    {
+      "locs": [
+        "USA - Seattle, WA"
+      ],
+      "domestic": "yes",
+      "rank": 2
+    },
+    {
+      "locs": [
+        "US-AL-Redstone Arsenal"
+      ],
+      "domestic": "yes",
+      "rank": 2
+    },
+    {
+      "locs": [
+        "Poughkeepsie, NY"
+      ],
+      "domestic": "yes",
+      "rank": 2
+    },
+    {
+      "locs": [
+        "Jersey City",
+        "Charlotte",
+        "Plano"
+      ],
+      "domestic": "yes",
+      "rank": 2,
+      "note": "one non-home-state site is enough"
+    },
+    {
+      "locs": [
+        "US - TX, Houston"
+      ],
+      "domestic": "yes",
+      "rank": 3
+    },
+    {
+      "locs": [
+        "Plano"
+      ],
+      "domestic": "yes",
+      "rank": 3
+    },
+    {
+      "locs": [
+        "Indianapolis"
+      ],
+      "domestic": "yes",
+      "rank": 2,
+      "regression": "contains 'india'"
+    },
+    {
+      "locs": [
+        "United States-New Mexico-Albuquerque"
+      ],
+      "domestic": "yes",
+      "rank": 2,
+      "regression": "contains 'mexico'"
+    },
+    {
+      "locs": [
+        "Not specified"
+      ],
+      "domestic": "check",
+      "rank": 5,
+      "note": "dataset placeholder"
+    },
+    {
+      "locs": [
+        "Lithuania - Vilnius"
+      ],
+      "domestic": "no",
+      "rank": 4,
+      "regression": "reached a US shortlist 2026-09-18"
+    },
+    {
+      "locs": [
+        "Kyiv"
+      ],
+      "domestic": "no",
+      "rank": 4,
+      "regression": "reached a US shortlist 2026-09-18"
+    },
+    {
+      "locs": [
+        "Budapest, Hungary"
+      ],
+      "domestic": "no",
+      "rank": 4,
+      "regression": "reached a US shortlist 2026-09-18"
+    },
+    {
+      "locs": [
+        "Knutsford, Radbroke Hall"
+      ],
+      "domestic": "no",
+      "rank": 4
+    },
+    {
+      "locs": [
+        "Rome (KIT51637) Spaces Eur Laurentina"
+      ],
+      "domestic": "no",
+      "rank": 4
+    },
+    {
+      "locs": [
+        "Asia"
+      ],
+      "domestic": "no",
+      "rank": 4
+    },
+    {
+      "locs": [
+        "Mississauga - Avebury"
+      ],
+      "domestic": "no",
+      "rank": 4
+    },
+    {
+      "locs": [
+        "Remote - Bulgaria"
+      ],
+      "domestic": "no",
+      "rank": 4,
+      "note": "remote but not eligible"
+    },
+    {
+      "locs": [
+        "Remote, Global"
+      ],
+      "domestic": "check",
+      "rank": 5
+    },
+    {
+      "locs": [
+        "Headquarters"
+      ],
+      "domestic": "check",
+      "rank": 5
+    },
+    {
+      "locs": [
+        "2 Locations"
+      ],
+      "domestic": "check",
+      "rank": 5
+    },
+    {
+      "locs": [],
+      "domestic": "check",
+      "rank": 5
+    },
+    {
+      "locs": [
+        "Sydney",
+        "Melbourne, VIC",
+        "Brisbane, QLD",
+        "Perth"
+      ],
+      "domestic": "no",
+      "rank": 4,
+      "regression": "mixed known-foreign + unknown city, no domestic evidence"
+    },
+    {
+      "locs": [
+        "Remote - USA",
+        "Montreal"
+      ],
+      "domestic": "yes",
+      "rank": 1,
+      "note": "one domestic remote site is enough"
+    }
   ],
   "workday_url_cases": [
     {

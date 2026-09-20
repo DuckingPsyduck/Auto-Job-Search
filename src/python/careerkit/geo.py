@@ -108,7 +108,9 @@ class Geo:
         states = [self.domestic(l) for l in locs]
         domestic_locs = [l for l, s in zip(locs, states) if s == "yes"]
 
-        if all(s == "no" for s in states):
+        # Recognised foreign locations with no domestic evidence anywhere: treat the posting as
+        # foreign even if some entries are unknown ("Sydney; Melbourne; Perth").
+        if not domestic_locs and "no" in states:
             return 4
         if self.is_remote(text):
             if domestic_locs:
