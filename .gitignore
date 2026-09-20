@@ -1,0 +1,33 @@
+# Candidate data — never commit. One person's job search per checkout.
+config/profile.yml
+config/scan-config.yml
+config/portals.yml
+private/
+output/
+.work/
+
+# Documents of any kind: CVs, exports, captured postings
+*.docx
+*.doc
+*.pdf
+*.xlsx
+*.xls
+*.csv
+!fixtures/**/*.csv
+
+# Runtimes
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+~$*
+.idea/
+.vscode/

@@ -1,0 +1,155 @@
+# careerops-kit — pipeline configuration
+#
+# Copy to `config/scan-config.yml` and edit. Everything the scanners do is driven from here:
+# paths, sources, thresholds, title/lane matching and output naming. No candidate identity
+# lives in this file — that belongs in `profile.yml`.
+#
+# Paths are resolved relative to `paths.root` unless absolute. `{date}` in an output name is
+# the run date (local clock, ISO format).
+
+version: 1
+
+paths:
+  root: .                                   # repo root; env CAREERKIT_ROOT overrides
+  work_dir: .work                           # scan JSON, fetched job descriptions (gitignored)
+  profile: config/profile.yml
+  portals: config/portals.yml               # boards to scan (see portals.example.yml)
+  geo_terms: config/geo-terms.json
+  ats_vocab: config/ats-vocab.yml
+  cv_dir: private/cv                        # candidate's .docx CV masters (gitignored)
+  tracker: private/applications.md          # optional; used only for "applied here before"
+  output_dir: output                        # gitignored
+  outputs:
+    tracked_scan: "Job-Scan-{date}.xlsx"
+    full_sweep: "ATS-Sweep-{date}.xlsx"
+    remote_boards: "remote-boards-{date}.json"
+    board_search: "Board-Search-{date}.xlsx"
+
+http:
+  # Identify the client honestly and give a contact address; some boards block generic agents.
+  user_agent: "careerops-kit/0.1 (+{{CONTACT_EMAIL}})"
+  timeout_ms: 25000
+  retries: 3
+  backoff_ms: 600                           # multiplied by attempt number
+  verify_tls: true
+  politeness_delay_s: 0                     # per-request delay; raise for HTML scraping
+  max_page_bytes: 1500000
+  concurrency:
+    default: 6                              # parallel board fetches
+    jd_fetch: 8                             # parallel job-description fetches
+  workday:
+    page_size: 20                           # Workday CXS returns 20 per page
+    max_pages: 110                          # stop after this many pages per board
+
+windows:
+  tracked_scan_days: 1                      # "posted today" window
+  full_sweep_days: 1
+  remote_boards_days: 0                     # 0 = today only
+  lookback_days: 7                          # secondary "last N days" sheet
+
+titles:
+  # The scanners keep a posting when a positive keyword matches the title and no negative does.
+  # Keep this list tight: it is the single biggest lever on result quality.
+  positive_from_portals: true               # use portals.yml title_filter.positive as the base
+  extra_positive: []
+  extra_negative: [intern, internship, director, "vice president", chief, "head of"]
+  seniority_flag: '\b(senior|sr\.?|lead|staff|principal|manager|head of|fellow)\b'
+
+lanes:
+  # Postings are bucketed by title so the workbooks group by the kind of work, not the employer.
+  # Rename, reorder or replace these to match the candidate's target archetypes.
+  order: [intelligence, sysadmin, data, business_intelligence, support]
+  labels:
+    intelligence: "Intelligence / fraud / sec-ops"
+    sysadmin: "Sysadmin / DBA / SRE"
+    data: "Data engineering"
+    business_intelligence: "Business intelligence (not intel work)"
+    support: "Support / other"
+  patterns:
+    business_intelligence: 'business intelligence|workforce intelligence'
+    intelligence: 'intelligence|threat|osint|insider|gsoc|fraud|trust (and|&) safety|investigat|risk analyst|security operations|disinformation|influence|platform integrity'
+    sysadmin: 'systems? administrator|linux administrator|database administrator|\bdba\b|site reliability|devops|it operations|infrastructure operations|cloud operations|it systems engineer'
+    data: 'data engineer|database engineer|data platform|data infrastructure|data warehouse|analytics engineer|\betl\b'
+    support: '.*'                           # fallback; keep last in `order`
+
+location:
+  # Ranking comes from the profile (home country, home state, preferred/excluded cities).
+  # These are the labels and the shortlist rule.
+  ranks:
+    1: "1 Remote"
+    2: "2 On-site, outside home state"
+    3: "3 On-site, home state"
+    4: "4 Outside home country"
+    5: "5 Check location"
+  shortlist_ranks: [1, 2, 3]                # rank 4 is dropped; rank 5 gets its own sheet
+  # A location is domestic only on positive evidence. Unrecognised places become rank 5 so a
+  # human can look, instead of being assumed domestic. See docs/DECISIONS.md.
+  workday_url_fallback: true                # read the location out of a Workday URL when the
+                                            # posting only says e.g. "3 Locations"
+
+extraction:
+  # Regexes applied to a posting's full text during detail enrichment.
+  clearance:
+    structured_field: '(Minimum Clearance Required to Start|Security Clearance Type):\s*([^:&]{2,40}?)\s*(Employee|Security|Percentage|&#)'
+    active: '(active|current|existing)\s+(and\s+\w+\s+)?(DoD\s+)?(TS/SCI|top secret|secret|security clearance|clearance)|clearance (is )?required|must (possess|have|hold) (an? )?(active )?(TS|top secret|secret)'
+    obtainable: '(ability to obtain|able to obtain|eligib\w* (to|for) (obtain )?(a )?(security )?clearance|must be able to (obtain|get)|obtain and maintain|sponsor\w* (a |your |the )?(security )?clearance)'
+    polygraph: 'polygraph|\bpoly\b'
+  pay: '\$\s?\d[\d,]*(\.\d+)?\s?[kK]?\s*(-|–|—|to)\s*\$?\s?\d[\d,]*(\.\d+)?\s?[kK]?'
+
+scoring:
+  # ATS keyword score: share of a posting's recognised terms that the CV also contains.
+  # It is an estimate of keyword overlap, not a real ATS ranking. See docs/DECISIONS.md.
+  min_jd_chars: 400                         # shorter than this = description not retrievable
+  min_terms_for_reliable_score: 10          # fewer recognised terms = score marked "thin"
+  target_match_pct: 75
+  apply_rule:
+    apply_at: 75                            # >= this: apply
+    maybe_at: 65                            # 65-75: apply only with a small pool or a referral
+    # below maybe_at, or a required core tool missing outright: skip
+
+sources:
+  ats:
+    # {slug}, {id}, {host}, {tenant}, {site}, {path} are filled by the provider.
+    greenhouse_board: "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=false"
+    greenhouse_job:   "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs/{id}"
+    lever_board:      "https://api.lever.co/v0/postings/{slug}?mode=json"
+    lever_job:        "https://api.lever.co/v0/postings/{slug}/{id}"
+    ashby_board:      "https://api.ashbyhq.com/posting-api/job-board/{slug}"
+    workday_cxs:      "https://{host}/wday/cxs/{tenant}/{site}/{path}"
+
+  remote_boards:
+    # Public feeds, polled once a day. Check each site's robots.txt and terms before enabling;
+    # docs/SOURCES.md records what was checked and when.
+    - name: We Work Remotely
+      kind: rss
+      url: "https://weworkremotely.com/remote-jobs.rss"
+      enabled: true
+    - name: Jobicy
+      kind: json
+      url: "https://jobicy.com/api/v2/remote-jobs?count=100"
+      items_path: jobs
+      enabled: true
+    - name: Working Nomads
+      kind: json
+      url: "https://www.workingnomads.com/api/exposed_jobs/"
+      enabled: true
+
+  full_sweep:
+    enabled: true
+    engine: dataset                         # dataset | live | off
+    dataset:
+      # Public daily index of ATS postings (~1.4M rows, gzipped JSON chunks). We read it for
+      # discovery and then confirm details against each employer's own ATS, because the
+      # record's `first_seen` is the indexer's first sighting, NOT the employer's posted date.
+      # Attribution and access notes: docs/SOURCES.md.
+      name: job-board-aggregator
+      chunks_api: "https://api.github.com/repos/Feashliaa/job-board-data/contents/data/chunks"
+      homepage: "https://github.com/Feashliaa/job-board-aggregator"
+      cache_ttl_hours: 20                   # refreshed daily upstream
+    live:
+      # Fallback when the dataset is unavailable: walk the boards in portals.yml directly.
+      ats: [greenhouse, lever, ashby, workday]
+
+flags:
+  aggregator_companies: [jobgether]          # reposters: note "find the real employer"
+  note_possible_repost: true                 # posting text older than its listed date

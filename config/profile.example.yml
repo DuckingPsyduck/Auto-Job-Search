@@ -1,0 +1,87 @@
+# careerops-kit — candidate profile
+#
+# Copy to `config/profile.yml` and fill in. This is the ONLY file with personal data, and it is
+# gitignored. Everything user-facing (CV tailoring, application answers, scan ranking) is
+# generated from this file plus the candidate's own CV documents — nothing else.
+#
+# Placeholders look like {{THIS}}. Replace every one, or delete the key if it doesn't apply.
+
+version: 1
+
+identity:
+  full_name: "{{CANDIDATE_NAME}}"
+  email: "{{EMAIL}}"
+  phone: "{{PHONE}}"
+  links:
+    linkedin: "{{LINKEDIN_URL}}"
+    github: "{{GITHUB_URL}}"
+    portfolio: ""
+
+eligibility:
+  citizenship: "{{COUNTRY}}"                 # drives the domestic/foreign location rule
+  work_authorization: "{{e.g. citizen, no sponsorship needed}}"
+  veteran: false
+  clearance:
+    current: none                            # none | active | inactive
+    highest_held: ""                         # e.g. "TS/SCI", blank if never held
+    expired: ""                              # year, if applicable
+    # Roles demanding an ACTIVE clearance on day one are disqualified when current == none.
+    # Roles that sponsor or say "ability to obtain" stay in scope.
+
+location:
+  home_country: US
+  home_state: "{{STATE_CODE}}"               # on-site here ranks last if relocating out
+  relocating_out_of_home_state: true
+  preferred_cities: []                       # named first in location answers
+  excluded_cities: []                        # never suggested; left unmentioned in answers
+  remote_ok: true
+  ranking_note: >
+    1 remote (domestic), 2 on-site outside the home state, 3 on-site in the home state,
+    4 outside the home country (excluded).
+
+compensation:
+  currency: USD
+  base_floor: 0                              # postings whose maximum is below this are dropped
+  target_min: 0
+  target_max: 0
+  notes: ""
+
+targets:
+  # Two or three archetypes, most important first. Keywords feed the scanners; keep them tight.
+  archetypes:
+    - name: "{{ARCHETYPE_1}}"                # e.g. "Data Engineer (mid)"
+      priority: primary
+      keywords: []
+    - name: "{{ARCHETYPE_2}}"
+      priority: primary
+      keywords: []
+  cv_masters:
+    # Map an archetype to the .docx master used for it. Files live in paths.cv_dir.
+    "{{ARCHETYPE_1}}": "{{CV_FILENAME_1}}.docx"
+    "{{ARCHETYPE_2}}": "{{CV_FILENAME_2}}.docx"
+
+narrative:
+  headline: "{{ONE LINE: role + core stack}}"
+  # Why they're looking, in their own words. Used in screens and application forms; keep it
+  # forward-looking and never critical of the current employer.
+  exit_story: "{{EXIT STORY — swap the closing specialty per role}}"
+  superpowers: []                            # 2-4 proof points, each traceable to the CV
+
+confirmed_facts:
+  # Facts the facilitator confirmed that are NOT yet in the CV. Each entry records what is
+  # supported and, explicitly, what is not — so later sessions can use the keyword without
+  # inventing scope. Append-only; delete only when the fact moves into the CV.
+  # - date: 2026-01-01
+  #   fact: "Uses <tool> daily"
+  #   supports: ["<tool>"]
+  #   not_confirmed: ["years of use", "production scale"]
+  #   source: facilitator
+
+constraints:
+  # Hard rules the pipeline and any generated content must respect.
+  never_fabricate: true                      # keywords are reformulated, never invented
+  never_submit: true                         # prepare everything; the candidate clicks submit
+  no_account_creation: true
+  respect_site_terms: true                   # see docs/SOURCES.md
+  honeypot_phrases: []                       # strings some employers plant to catch AI text;
+                                             # must never appear in generated material

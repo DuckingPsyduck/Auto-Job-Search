@@ -1,0 +1,67 @@
+# Demo profile — a fictional candidate, used by the smoke test and the docs examples.
+# Real profiles live at config/profile.yml and are gitignored.
+
+version: 1
+
+identity:
+  full_name: "Alex Rivera"
+  email: "alex.rivera@example.com"
+  phone: "(555) 010-0199"
+  links:
+    linkedin: "linkedin.com/in/example"
+    github: "github.com/example"
+    portfolio: ""
+
+eligibility:
+  citizenship: "US"
+  work_authorization: "US citizen, no sponsorship needed"
+  veteran: false
+  clearance:
+    current: none
+    highest_held: ""
+    expired: ""
+
+location:
+  home_country: US
+  home_state: "TX"
+  relocating_out_of_home_state: true
+  preferred_cities: ["Denver", "Seattle"]
+  excluded_cities: []
+  remote_ok: true
+  ranking_note: >
+    1 remote, 2 on-site outside Texas, 3 on-site in Texas, 4 outside the US.
+
+compensation:
+  currency: USD
+  base_floor: 90000
+  target_min: 110000
+  target_max: 150000
+  notes: ""
+
+targets:
+  archetypes:
+    - name: "Data Engineer (mid)"
+      priority: primary
+      keywords: ["data engineer", "analytics engineer", "database engineer", "data platform"]
+    - name: "Systems Administrator / SRE"
+      priority: primary
+      keywords: ["systems administrator", "system administrator", "site reliability", "devops engineer"]
+  cv_masters:
+    "Data Engineer (mid)": "data-engineer.docx"
+    "Systems Administrator / SRE": "sysadmin.docx"
+
+narrative:
+  headline: "Data engineer — Python, SQL, cloud pipelines"
+  exit_story: "Looking for a larger team and deeper specialization."
+  superpowers:
+    - "Runs a production pipeline at scale"
+    - "Owns incidents end to end"
+
+confirmed_facts: []
+
+constraints:
+  never_fabricate: true
+  never_submit: true
+  no_account_creation: true
+  respect_site_terms: true
+  honeypot_phrases: []

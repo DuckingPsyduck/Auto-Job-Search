@@ -1,0 +1,32 @@
+{
+  "name": "careerops-kit",
+  "version": "0.1.0",
+  "description": "Configurable job-search pipeline: scan public job boards, rank by location fit, score postings against a candidate's CV keywords.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "careerkit": "bin/careerkit.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/",
+    "scan": "node bin/careerkit.mjs scan",
+    "sweep": "node bin/careerkit.mjs sweep",
+    "remote": "python -m careerkit.cli remote-boards"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "files": [
+    "bin",
+    "src",
+    "config/*.example.yml",
+    "config/geo-terms.json",
+    "config/ats-vocab.yml",
+    "docs",
+    "LICENSE",
+    "NOTICE.md"
+  ]
+}
