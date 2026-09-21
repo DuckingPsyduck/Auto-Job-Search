@@ -27,6 +27,7 @@ Commands:
   tracked    scan the employer boards listed in portals.yml
   remote     pull the configured remote-job feeds
   enrich     fetch each survivor's record from the employer's ATS
+  score      score the day's postings against your CVs
   report     build the Excel workbook for a run
   config     print the resolved configuration (paths, windows, thresholds)
 
@@ -45,21 +46,29 @@ Options:
  * Reporting lives on the Python side (openpyxl). Shelling out keeps one entry point for the
  * user; the exit code and stdout are passed straight through.
  */
-function runReport(cfg, args, log) {
+function runPython(cfg, subcommand, log, label = subcommand[0]) {
   const python = findPython();
   if (!python) {
-    log('report needs Python with openpyxl and PyYAML installed — skipping the workbook');
+    log(`${label} needs Python with openpyxl and PyYAML installed — skipping`);
     return 0;
   }
   // --config is a top-level flag on the Python parser, so it goes before the subcommand.
-  const argv = [...python.args, '-m', 'careerkit.cli', '--config', cfg.configFile, 'report'];
+  const res = spawnSync(
+    python.cmd,
+    [...python.args, '-m', 'careerkit.cli', '--config', cfg.configFile, ...subcommand],
+    {
+      stdio: 'inherit',
+      env: { ...process.env, PYTHONPATH: join(REPO_ROOT, 'src', 'python'), PYTHONIOENCODING: 'utf-8' },
+    }
+  );
+  return res.status ?? 1;
+}
+
+function runReport(cfg, args, log) {
+  const argv = ['report'];
   if (args.date) argv.push('--date', args.date);
   if (args.kind) argv.push('--kind', args.kind);
-  const res = spawnSync(python.cmd, argv, {
-    stdio: 'inherit',
-    env: { ...process.env, PYTHONPATH: join(REPO_ROOT, 'src', 'python'), PYTHONIOENCODING: 'utf-8' },
-  });
-  return res.status ?? 1;
+  return runPython(cfg, argv, log, 'report');
 }
 
 function parseArgs(argv) {
@@ -153,6 +162,12 @@ ${result.out || ''}
       );
       return 0;
     }
+    case 'score': {
+      const argv = ['score'];
+      if (args.date) argv.push('--date', args.date);
+      if (args['jd-file']) argv.push('--jd-file', args['jd-file']);
+      return runPython(cfg, argv, log, 'score');
+    }
     case 'report': {
       return runReport(cfg, args, log);
     }
@@ -169,6 +184,7 @@ ${result.out || ''}
         }
       }
       const enriched = await runEnrich(cfg, { date, log });
+      runPython(cfg, ['score', '--date', date], log, 'score');
       const reported = runReport(cfg, { ...args, date }, log);
       const after = Object.entries(enriched.after).map(([v, n]) => `${v} ${n}`).join(' | ');
       process.stdout.write(`\n${date} | ${after}\nswept ${swept.counts.seen.toLocaleString()} postings\n`);

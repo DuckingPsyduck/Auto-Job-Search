@@ -40,10 +40,16 @@ TAG_STYLE = {
     "tracked": ("E5E7EB", "374151"),
     "senior+": ("FBF0D8", "8A6410"),
     "yes": ("F1E3DF", "8C4A3F"),
+    "apply": ("DCEBEC", "0E5058"),
+    "maybe": ("FBF0D8", "8A6410"),
+    "skip": ("F1E3DF", "8C4A3F"),
 }
 
 #: (header, width, record key). Keys missing from a record render blank.
 MAIN_COLUMNS = [
+    ("Call", 8, "call"),
+    ("Fit % (as-is)", 12, "fit_as_is"),
+    ("Fit % (tailored)", 14, "fit_tailored"),
     ("Location Rank", 15, "_rank_label"),
     ("Posted", 11, "date_posted"),
     ("Lane", 26, "_lane_label"),
@@ -56,6 +62,8 @@ MAIN_COLUMNS = [
     ("Employer", 12, "employer_coverage"),
     ("Applied Before", 13, "_applied"),
     ("ATS", 12, "ats"),
+    ("Best CV", 24, "fit_best_cv"),
+    ("Missing Terms", 44, "fit_missing"),
     ("Note", 28, "_note"),
     ("URL", 62, "url"),
 ]
@@ -116,7 +124,7 @@ def _sheet(ws, rows: Iterable[dict], columns: list[tuple[str, int, str]]) -> Non
                 if bg:
                     cell.fill = PatternFill("solid", fgColor=bg)
                     cell.font = Font(name=FONT, size=10, bold=True, color=fg)
-            elif key in ("employer_coverage", "seniority", "_applied") and str(value).lower() in TAG_STYLE:
+            elif key in ("employer_coverage", "seniority", "_applied", "call") and str(value).lower() in TAG_STYLE:
                 bg, fg = TAG_STYLE[str(value).lower()]
                 cell.fill = PatternFill("solid", fgColor=bg)
                 cell.font = Font(name=FONT, size=10, bold=True, color=fg)
@@ -146,9 +154,15 @@ def build_workbook(cfg, rows: list[dict], out_path: str | Path, meta: dict | Non
     rows = [_decorate(dict(r), cfg) for r in rows]
     touched = [r for r in rows if r.get("verdict")]
 
+    call_order = {"apply": 0, "maybe": 1, "skip": 2, "": 3}
     shortlist = sorted(
         (r for r in touched if r["verdict"] == "shortlist"),
-        key=lambda r: (r.get("location_rank", 9), r.get("lane", ""), r.get("company", "")),
+        key=lambda r: (
+            call_order.get(r.get("call", ""), 3),
+            -(r.get("fit_tailored") or 0),
+            r.get("location_rank", 9),
+            r.get("company", ""),
+        ),
     )
     check = sorted(
         (r for r in touched if r["verdict"] == "check"),

@@ -8,6 +8,7 @@ Run directly when debugging:
 from __future__ import annotations
 
 import argparse
+import io
 import sys
 from pathlib import Path
 
@@ -67,6 +68,53 @@ def _suggest(args: argparse.Namespace) -> int:
     return 0
 
 
+def _score(args: argparse.Namespace) -> int:
+    """Score cached job descriptions against the candidate's CVs, or one pasted JD file."""
+    import json
+
+    from .score import Scorer
+
+    cfg = load_config(args.config)
+    scorer = Scorer.from_config(cfg)
+    if not scorer.ready:
+        print(f"no CV documents in {cfg.paths['cv_dir']} — add .docx masters and retry", file=sys.stderr)
+        return 1
+
+    if args.jd_file:
+        text = Path(args.jd_file).read_text(encoding="utf-8", errors="replace")
+        result = scorer.score(text)
+        print(json.dumps(result.as_dict() | {"hits": result.hits}, indent=1))
+        return 0
+
+    date = args.date or today()
+    source = cfg.work_path(f"enriched-{date}.jsonl")
+    if not source.exists():
+        print(f"no enriched run for {date}: {source}", file=sys.stderr)
+        return 1
+
+    rows = read_jsonl(source)
+    scored = 0
+    for row in rows:
+        if row.get("verdict") not in ("shortlist", "check"):
+            continue
+        cached = cfg.work_path("cache", "jd", f"{row['id']}.txt")
+        if not cached.exists():
+            continue
+        row.update(scorer.score(cached.read_text(encoding="utf-8", errors="replace")).as_dict())
+        scored += 1
+
+    with io.open(source, "w", encoding="utf-8") as fh:
+        for row in rows:
+            fh.write(json.dumps(row) + "\n")
+
+    calls: dict[str, int] = {}
+    for row in rows:
+        if row.get("call"):
+            calls[row["call"]] = calls.get(row["call"], 0) + 1
+    print(f"scored {scored} postings | " + " · ".join(f"{k} {v}" for k, v in sorted(calls.items())))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="careerkit-py", description="careerops-kit reporting and scoring")
     parser.add_argument("--config", help="path to scan-config.yml")
@@ -82,6 +130,11 @@ def main(argv: list[str] | None = None) -> int:
     suggest.add_argument("--cv-dir", required=True)
     suggest.add_argument("--vocab", help="path to ats-vocab.yml (default: from config)")
     suggest.set_defaults(func=_suggest)
+
+    score = sub.add_parser("score", help="score postings against the candidate's CVs")
+    score.add_argument("--date", help="run date (default: today)")
+    score.add_argument("--jd-file", help="score a single job description from a file instead")
+    score.set_defaults(func=_score)
 
     args = parser.parse_args(argv)
     try:
