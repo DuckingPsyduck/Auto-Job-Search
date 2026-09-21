@@ -1,0 +1,35 @@
+# careerops-kit — tracked employer boards
+#
+# Copy to `config/portals.yml` and replace these with the employers you care about. The tracked
+# scan reads each board's own API directly, which gives you three things the public index can't:
+#   * the employer's native posted date, with no indexing lag
+#   * employers the index does not cover
+#   * a daily accuracy check on the index itself
+#
+# Finding a slug: open the company's job board and look at the URL.
+#   job-boards.greenhouse.io/SLUG            -> greenhouse
+#   jobs.lever.co/SLUG                       -> lever
+#   jobs.ashbyhq.com/SLUG                    -> ashby
+#   TENANT.wdN.myworkdayjobs.com/SITE        -> workday (tenant, wd, site)
+#
+# Start with 10-30 employers you would genuinely take a job at. A long list is not better; it is
+# just slower. Disable an entry with `enabled: false` instead of deleting it, so the history of
+# what you tried stays visible.
+
+version: 1
+
+greenhouse:
+  - { slug: anthropic, name: Anthropic }
+  - { slug: axon, name: Axon }
+  - { slug: twitch, name: Twitch }
+
+lever:
+  - { slug: ro, name: Ro }
+
+ashby:
+  - { slug: openai, name: OpenAI }
+
+workday:
+  # tenant + wd host segment + site name, from the board URL
+  - { tenant: caci, wd: wd1, site: external, name: CACI }
+  - { tenant: bah, wd: wd1, site: BAH_Jobs, name: Booz Allen Hamilton }

@@ -37,12 +37,42 @@ export function cachedText(cfg, id) {
 }
 
 /**
+ * Merge every source's ranked file for a date into one list, de-duplicated by posting id.
+ *
+ * When two sources found the same posting, the record with the better date wins: a tracked
+ * board read the employer's own date, while the public index only knows when it first saw the
+ * posting. Source order below encodes that preference.
+ */
+export function mergeRanked(cfg, date) {
+  const preference = ['tracked', 'remote', 'dataset'];
+  const byId = new Map();
+  for (const source of ['tracked', 'remote', 'sweep']) {
+    const path = workPath(cfg, `ranked-${source}-${date}.jsonl`);
+    if (!existsSync(path)) continue;
+    for (const row of readJsonl(path)) {
+      const existing = byId.get(row.id);
+      if (!existing) {
+        byId.set(row.id, row);
+        continue;
+      }
+      const rank = r => preference.indexOf(r.source || 'dataset');
+      if (rank(row) < rank(existing)) {
+        byId.set(row.id, { ...row, also_seen_in: existing.source });
+      } else {
+        existing.also_seen_in = row.source;
+      }
+    }
+  }
+  return [...byId.values()];
+}
+
+/**
  * @param {object} cfg
  * @param {{date?: string, input?: string, verdicts?: string[], limit?: number, log?: Function}} [opts]
  */
 export async function runEnrich(cfg, { date = today(), input, verdicts = ['shortlist', 'check'], limit, log = () => {} } = {}) {
-  const inPath = input || workPath(cfg, `ranked-sweep-${date}.jsonl`);
-  const rows = readJsonl(inPath);
+  const rows = input ? readJsonl(input) : mergeRanked(cfg, date);
+  if (!rows.length) throw new Error(`no ranked results for ${date} — run sweep, tracked or remote first`);
   const targets = rows.filter(r => verdicts.includes(r.verdict)).slice(0, limit || undefined);
 
   const geo = Geo.fromConfig(cfg);

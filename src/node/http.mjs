@@ -20,16 +20,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  * @param {{accept?: string, etag?: string|null}} [opts]
  * @returns {Promise<FetchResult>}
  */
-export async function fetchRaw(url, cfg, { accept = 'application/json', etag = null } = {}) {
+export async function fetchRaw(url, cfg, { accept = 'application/json', etag = null, method = 'GET', body = null } = {}) {
   const { timeout_ms = 25000, retries = 3, backoff_ms = 600, user_agent, politeness_delay_s = 0 } = cfg.http || {};
   const headers = { Accept: accept, 'User-Agent': user_agent };
   if (etag) headers['If-None-Match'] = etag;
+  // Workday's CXS search is a POST; everything else is a plain GET.
+  const payload = body == null ? undefined : (typeof body === 'string' ? body : JSON.stringify(body));
+  if (payload !== undefined) headers['Content-Type'] = 'application/json';
 
   let lastError = null;
   for (let attempt = 1; attempt <= retries; attempt++) {
     if (politeness_delay_s) await sleep(politeness_delay_s * 1000);
     try {
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(timeout_ms) });
+      const res = await fetch(url, { method, headers, body: payload, signal: AbortSignal.timeout(timeout_ms) });
       if (res.status === 304) return { ok: true, status: 304, body: null, etag, fromCache: true, error: null };
       if (res.ok) {
         const body = Buffer.from(await res.arrayBuffer());

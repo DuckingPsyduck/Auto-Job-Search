@@ -14,14 +14,18 @@ import { join } from 'node:path';
 import { loadConfig, today, REPO_ROOT } from '../src/node/config.mjs';
 import { runSweep } from '../src/node/sweep.mjs';
 import { runEnrich } from '../src/node/enrich.mjs';
+import { runTracked } from '../src/node/tracked.mjs';
+import { runRemote } from '../src/node/remote.mjs';
 import { runInit, findPython } from '../src/node/init.mjs';
 
 const USAGE = `careerkit <command> [options]
 
 Commands:
   init       set up your profile and configuration (start here)
-  daily      sweep + enrich + report, in one go
+  daily      sweep + tracked + remote + enrich + report, in one go
   sweep      discover postings from the public dataset, filter and rank them
+  tracked    scan the employer boards listed in portals.yml
+  remote     pull the configured remote-job feeds
   enrich     fetch each survivor's record from the employer's ATS
   report     build the Excel workbook for a run
   config     print the resolved configuration (paths, windows, thresholds)
@@ -121,12 +125,49 @@ async function main() {
       process.stdout.write(`${result.date} | ${after}\n${result.out}\n`);
       return 0;
     }
+    case 'tracked': {
+      const result = await runTracked(cfg, {
+        date: args.date || today(),
+        sinceDays: args.since ? Number(args.since) : undefined,
+        log,
+      });
+      process.stdout.write(
+        `${result.date} | boards ${result.boards} | postings ${result.postings} | ` +
+        `shortlist ${result.counts.shortlist || 0} | check ${result.counts.check || 0}
+${result.out}
+`
+      );
+      return 0;
+    }
+    case 'remote': {
+      const result = await runRemote(cfg, {
+        date: args.date || today(),
+        sinceDays: args.since ? Number(args.since) : undefined,
+        log,
+      });
+      process.stdout.write(
+        `${result.date} | sources ${result.sources} | fetched ${result.fetched || 0} | ` +
+        `shortlist ${result.counts.shortlist || 0} | check ${result.counts.check || 0}
+${result.out || ''}
+`
+      );
+      return 0;
+    }
     case 'report': {
       return runReport(cfg, args, log);
     }
     case 'daily': {
       const date = args.date || today();
       const swept = await runSweep(cfg, { date, sinceDays: args.since ? Number(args.since) : undefined, log });
+      // Tracked boards and remote feeds are optional: a user may not have configured either,
+      // and a missing portals.yml should not stop the day's run.
+      for (const [name, run] of [['tracked', runTracked], ['remote', runRemote]]) {
+        try {
+          await run(cfg, { date, log });
+        } catch (err) {
+          log(`${name} skipped: ${err.message}`);
+        }
+      }
       const enriched = await runEnrich(cfg, { date, log });
       const reported = runReport(cfg, { ...args, date }, log);
       const after = Object.entries(enriched.after).map(([v, n]) => `${v} ${n}`).join(' | ');
