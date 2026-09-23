@@ -202,6 +202,16 @@ Flags: `--date YYYY-MM-DD`, `--since N` (discovery window), `--chunks N` (sample
 
 ---
 
+## Documentation
+
+| Document | For |
+|---|---|
+| [AGENTS.md](AGENTS.md) | AI agents driving the tool — commands, output format, the tailoring method |
+| [docs/ONBOARDING.md](docs/ONBOARDING.md) | Setting up, and what each answer changes |
+| [docs/RUNBOOK.md](docs/RUNBOOK.md) | The daily and weekly rhythm; what to do with the workbook |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Why the pipeline behaves as it does, with the incidents behind each rule |
+| [docs/SOURCES.md](docs/SOURCES.md) | Every data source, its access basis, and the ones we rejected |
+
 ## Development
 
 ```bash

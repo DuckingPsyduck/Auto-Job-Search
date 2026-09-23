@@ -1,22 +1,23 @@
 # Third-party notices
 
-## career-ops (vendored)
+## career-ops
 
-`vendor/career-ops/` contains files copied from **career-ops v1.30.0**
-(<https://github.com/santifer/career-ops>), used here as the full-sweep engine that walks
-public ATS board directories.
+The full-sweep design in this project was informed by reading **career-ops**
+(<https://github.com/santifer/career-ops>, MIT, copyright (c) 2026 Santiago Fernández de
+Valderrama) — in particular its approach to reading public ATS board directories.
 
-Copyright (c) 2026 Santiago Fernández de Valderrama. Licensed under the MIT License; the
-full text ships at `vendor/career-ops/LICENSE`.
+No career-ops code ships in this repository. The implementation here is original, and the two
+projects share no files.
 
-**What is vendored:** only the modules the sweep entry point imports — the ATS providers
-(Greenhouse, Lever, Ashby, Workday, iCIMS), the shared HTTP/DNS layer, the filter builders
-and the board-directory seeds. The rest of career-ops (tracker workflow, CV/PDF generation,
-evaluation modes) is not included.
+## job-board-aggregator
 
-**Modifications:** any change made to vendored files is recorded in
-`vendor/career-ops/MODIFICATIONS.md`. Upstream files are otherwise copied verbatim so they
-can be diffed against a newer release.
+The full sweep reads a public daily index of ATS postings published by **job-board-aggregator**
+(<https://github.com/Feashliaa/job-board-aggregator>, MIT). The dataset itself is fetched at
+runtime from the project's generated data repository and is **not redistributed here**.
+
+That data repository carries no license file of its own. Treat it as a courtesy: cache politely,
+do not mirror it, and attribute it. If it becomes unavailable, the tracked-board scan and the
+remote feeds continue to work.
 
 ## Everything else
 
