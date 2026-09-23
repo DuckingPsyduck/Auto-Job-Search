@@ -6,7 +6,6 @@ Both twins read the same ``config/geo-terms.json`` so a new place is added once.
 """
 from __future__ import annotations
 
-import io
 import json
 import re
 from dataclasses import dataclass
@@ -48,7 +47,7 @@ class Geo:
     home: re.Pattern[str] | None
 
     @classmethod
-    def from_terms(cls, terms: dict, home_state: str = "", home_state_cities: list[str] | None = None) -> "Geo":
+    def from_terms(cls, terms: dict, home_state: str = "", home_state_cities: list[str] | None = None) -> Geo:
         home = None
         if home_state:
             known = terms.get("state_cities", {}).get(home_state.upper(), [])
@@ -66,8 +65,8 @@ class Geo:
         )
 
     @classmethod
-    def from_config(cls, cfg) -> "Geo":
-        terms = json.load(io.open(cfg.paths["geo_terms"], encoding="utf-8"))
+    def from_config(cls, cfg) -> Geo:
+        terms = json.loads(Path(cfg.paths["geo_terms"]).read_text(encoding="utf-8"))
         loc = (cfg.profile or {}).get("location", {})
         return cls.from_terms(terms, loc.get("home_state", ""), loc.get("home_state_cities", []))
 
@@ -96,17 +95,17 @@ class Geo:
         When the only location is a summary like "3 Locations", fall back to the location
         embedded in a Workday URL before giving up.
         """
-        locs = [l for l in (locs or []) if l]
+        locs = [loc for loc in (locs or []) if loc]
         text = all_text if all_text is not None else "; ".join(locs)
-        if locs and all(self.domestic(l) == "check" for l in locs) and url:
+        if locs and all(self.domestic(loc) == "check" for loc in locs) and url:
             from_url = workday_url_location(url)
             if from_url:
                 locs, text = [from_url], f"{text} {from_url}"
         if not locs:
             return 5
 
-        states = [self.domestic(l) for l in locs]
-        domestic_locs = [l for l, s in zip(locs, states) if s == "yes"]
+        states = [self.domestic(loc) for loc in locs]
+        domestic_locs = [loc for loc, s in zip(locs, states, strict=True) if s == "yes"]
 
         # Recognised foreign locations with no domestic evidence anywhere: treat the posting as
         # foreign even if some entries are unknown ("Sydney; Melbourne; Perth").
@@ -117,7 +116,7 @@ class Geo:
                 return 1
             if "no" not in states:
                 return 5
-        if any(not self.is_home_state(l) for l in domestic_locs):
+        if any(not self.is_home_state(loc) for loc in domestic_locs):
             return 2
         if domestic_locs:
             return 3
@@ -135,4 +134,4 @@ def workday_url_location(url: str | None) -> str:
 
 
 def load_terms(path: str | Path) -> dict:
-    return json.load(io.open(path, encoding="utf-8"))
+    return json.loads(Path(path).read_text(encoding="utf-8"))

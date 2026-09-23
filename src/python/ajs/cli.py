@@ -8,7 +8,6 @@ Run directly when debugging:
 from __future__ import annotations
 
 import argparse
-import io
 import sys
 from pathlib import Path
 
@@ -103,7 +102,7 @@ def _score(args: argparse.Namespace) -> int:
         row.update(scorer.score(cached.read_text(encoding="utf-8", errors="replace")).as_dict())
         scored += 1
 
-    with io.open(source, "w", encoding="utf-8") as fh:
+    with open(source, "w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row) + "\n")
 

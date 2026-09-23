@@ -8,8 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
-from ajs.score import Scorer, confirmed_text, terms_in, load_vocab
+from ajs.score import Scorer, confirmed_text, load_vocab, terms_in
 
 ROOT = Path(__file__).resolve().parents[1]
 VOCAB_PATH = ROOT / "config" / "ats-vocab.yml"

@@ -4,17 +4,15 @@ Runs the same fixtures as tests/geo.test.mjs so the Node and Python twins stay i
 """
 from __future__ import annotations
 
-import io
 import json
 from pathlib import Path
 
 import pytest
-
 from ajs.geo import Geo, workday_url_location
 
 ROOT = Path(__file__).resolve().parents[1]
-TERMS = json.load(io.open(ROOT / "config" / "geo-terms.json", encoding="utf-8"))
-FIXTURES = json.load(io.open(ROOT / "tests" / "geo_cases.json", encoding="utf-8"))
+TERMS = json.loads((ROOT / "config" / "geo-terms.json").read_text(encoding="utf-8"))
+FIXTURES = json.loads((ROOT / "tests" / "geo_cases.json").read_text(encoding="utf-8"))
 GEO = Geo.from_terms(TERMS, FIXTURES["home_state"])
 
 CASES = FIXTURES["cases"]

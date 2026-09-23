@@ -10,7 +10,6 @@ run of text can be split across several <w:t> elements.
 """
 from __future__ import annotations
 
-import io
 import re
 import zipfile
 from collections import Counter
@@ -70,7 +69,7 @@ def suggest_titles(texts: dict[str, str], limit: int = 12) -> list[str]:
 
 def suggest_skills(texts: dict[str, str], vocab_path: str | Path, limit: int = 30) -> list[str]:
     """Vocabulary terms the CVs actually support, most-mentioned first."""
-    vocab = (yaml.safe_load(io.open(vocab_path, encoding="utf-8")) or {}).get("terms", {})
+    vocab = (yaml.safe_load(Path(vocab_path).read_text(encoding="utf-8")) or {}).get("terms", {})
     joined = "\n".join(texts.values())
     hits: Counter[str] = Counter()
     for term, pattern in vocab.items():

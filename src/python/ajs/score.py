@@ -19,11 +19,10 @@ limits, and belong in the "not added — no basis" line of any tailoring reply.
 """
 from __future__ import annotations
 
-import io
 import re
-from dataclasses import dataclass, field
+from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import yaml
 
@@ -32,7 +31,7 @@ from .cvread import read_cv_dir
 
 def load_vocab(path: str | Path) -> dict[str, re.Pattern[str]]:
     """Compile the shared term vocabulary. Keys are display names, values are patterns."""
-    raw = (yaml.safe_load(io.open(path, encoding="utf-8")) or {}).get("terms", {})
+    raw = (yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}).get("terms", {})
     return {term: re.compile(pattern, re.I) for term, pattern in raw.items()}
 
 
@@ -100,7 +99,7 @@ class Scorer:
     maybe_at: int = 65
 
     @classmethod
-    def from_config(cls, cfg) -> "Scorer":
+    def from_config(cls, cfg) -> Scorer:
         vocab = load_vocab(cfg.paths["ats_vocab"])
         cvs = read_cv_dir(cfg.paths["cv_dir"]) if Path(cfg.paths["cv_dir"]).is_dir() else {}
         cv_terms = {name: terms_in(text, vocab) for name, text in cvs.items()}
@@ -118,7 +117,9 @@ class Scorer:
         )
 
     @classmethod
-    def from_texts(cls, vocab_path: str | Path, cv_texts: dict[str, str], confirmed: str = "", **kw) -> "Scorer":
+    def from_texts(
+        cls, vocab_path: str | Path, cv_texts: dict[str, str], confirmed: str = "", **kw
+    ) -> Scorer:
         """Build from raw text instead of a config — used by tests and by one-off scoring."""
         vocab = load_vocab(vocab_path)
         cv_terms = {name: terms_in(text, vocab) for name, text in cv_texts.items()}
@@ -168,7 +169,9 @@ class Scorer:
             call_reason=reason,
         )
 
-    def _call(self, tailored: int, thin: bool, missing: list[str], required_missing: list[str]) -> tuple[str, str]:
+    def _call(
+        self, tailored: int, thin: bool, missing: list[str], required_missing: list[str]
+    ) -> tuple[str, str]:
         if required_missing:
             return "skip", f"required and missing: {', '.join(required_missing)}"
         if thin:

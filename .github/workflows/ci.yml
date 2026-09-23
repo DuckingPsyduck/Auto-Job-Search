@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# The suites are offline by design: no test reaches the network, so CI stays fast and does not
+# depend on a third-party index being up. The live pipeline is exercised by the smoke job below,
+# which is allowed to fail without failing the build.
+env:
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  privacy:
+    name: Privacy check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Runs over git-tracked files only: a real name, phone number, CV or machine path must
+      # never reach a clone of this repository.
+      - run: node tools/privacy-check.mjs
+
+  test:
+    name: Tests (${{ matrix.os }}, node ${{ matrix.node }}, py ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['20', '22']
+        python: ['3.12']
+        include:
+          # One older Python, to keep the floor in pyproject.toml honest.
+          - os: ubuntu-latest
+            node: '22'
+            python: '3.10'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --upgrade pip && pip install pyyaml openpyxl pytest
+
+      - name: Node tests
+        run: npm test
+
+      - name: Python tests
+        run: python -m pytest tests -q
+        env:
+          PYTHONPATH: src/python
+
+      - name: CLI starts
+        run: node bin/ajs.mjs --help
+
+      - name: Config loads with the demo profile
+        shell: bash
+        run: |
+          cp config/scan-config.example.yml config/scan-config.yml
+          sed -i.bak 's#profile: config/profile.yml#profile: fixtures/demo-profile.yml#' config/scan-config.yml
+          node bin/ajs.mjs config | head -5
+
+  lint:
+    name: Lint (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install ruff
+      - run: ruff check src/python tests
+
+  smoke:
+    name: Live pipeline (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true      # third-party sources may be down; that is not our build failing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Sweep a slice of the public index
+        shell: bash
+        run: |
+          cp config/scan-config.example.yml config/scan-config.yml
+          sed -i.bak 's#profile: config/profile.yml#profile: fixtures/demo-profile.yml#' config/scan-config.yml
+          node bin/ajs.mjs sweep --chunks 2

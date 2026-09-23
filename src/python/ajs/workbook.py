@@ -13,10 +13,9 @@ without it. See docs/DECISIONS.md.
 """
 from __future__ import annotations
 
-import io
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -79,7 +78,7 @@ DROPPED_COLUMNS = [
 
 
 def read_jsonl(path: str | Path) -> list[dict]:
-    with io.open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         return [json.loads(line) for line in fh if line.strip()]
 
 
@@ -124,7 +123,8 @@ def _sheet(ws, rows: Iterable[dict], columns: list[tuple[str, int, str]]) -> Non
                 if bg:
                     cell.fill = PatternFill("solid", fgColor=bg)
                     cell.font = Font(name=FONT, size=10, bold=True, color=fg)
-            elif key in ("employer_coverage", "seniority", "_applied", "call") and str(value).lower() in TAG_STYLE:
+            elif (key in ("employer_coverage", "seniority", "_applied", "call")
+                    and str(value).lower() in TAG_STYLE):
                 bg, fg = TAG_STYLE[str(value).lower()]
                 cell.fill = PatternFill("solid", fgColor=bg)
                 cell.font = Font(name=FONT, size=10, bold=True, color=fg)
@@ -184,7 +184,8 @@ def build_workbook(cfg, rows: list[dict], out_path: str | Path, meta: dict | Non
     meta.setdefault("date", "")
     meta.setdefault("notes", [])
     meta["notes"] = [
-        ("Counts", f"shortlist {len(shortlist)} · check location {len(check)} · dropped {len(dropped)}"),
+        ("Counts",
+         f"shortlist {len(shortlist)} · check location {len(check)} · dropped {len(dropped)}"),
         *meta["notes"],
         (
             "Posted date",
@@ -205,7 +206,8 @@ def build_workbook(cfg, rows: list[dict], out_path: str | Path, meta: dict | Non
         ),
         (
             "Dropped",
-            "Every posting a target keyword matched but a gate rejected, with the reason. Titles that matched "
+            "Every posting a target keyword matched but a gate rejected, with the reason. Titles "
+            "that matched "
             "no keyword are counted, not listed.",
         ),
     ]

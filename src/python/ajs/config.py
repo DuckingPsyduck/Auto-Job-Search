@@ -7,7 +7,6 @@ builders and the scorer import from here rather than reading config files themse
 from __future__ import annotations
 
 import datetime as _dt
-import io
 import os
 import re
 from dataclasses import dataclass, field
@@ -46,7 +45,7 @@ def _get(obj: Any, dotted: str) -> Any:
 
 def _read_yaml(path: Path) -> dict:
     try:
-        return yaml.safe_load(io.open(path, encoding="utf-8")) or {}
+        return yaml.safe_load(open(path, encoding="utf-8")) or {}
     except Exception as exc:  # noqa: BLE001 - surfaced with the file name attached
         raise ConfigError(f"cannot read YAML at {path}: {exc}") from exc
 
@@ -110,12 +109,16 @@ def load_config(config_path: str | os.PathLike[str] | None = None) -> Config:
 
     Root resolution: ``AJS_ROOT``, then ``paths.root``, then the config file's parent.
     """
-    file = Path(config_path or os.environ.get("AJS_CONFIG") or REPO_ROOT / "config" / "scan-config.yml").resolve()
+    file = Path(
+        config_path or os.environ.get("AJS_CONFIG") or REPO_ROOT / "config" / "scan-config.yml"
+    ).resolve()
     if not file.exists():
         raise ConfigError(f"config not found: {file}\nCopy config/scan-config.example.yml and edit it.")
 
     raw = _read_yaml(file)
-    root = Path(os.environ.get("AJS_ROOT") or raw.get("paths", {}).get("root") or file.parent.parent).resolve()
+    root = Path(
+        os.environ.get("AJS_ROOT") or raw.get("paths", {}).get("root") or file.parent.parent
+    ).resolve()
 
     for key in REQUIRED:
         if _get(raw, key) is None:
@@ -123,7 +126,10 @@ def load_config(config_path: str | os.PathLike[str] | None = None) -> Config:
 
     paths = dict(raw.get("paths", {}))
     paths["root"] = root
-    for key in ("work_dir", "output_dir", "profile", "portals", "geo_terms", "ats_vocab", "cv_dir", "tracker"):
+    path_keys = (
+        "work_dir", "output_dir", "profile", "portals", "geo_terms", "ats_vocab", "cv_dir", "tracker",
+    )
+    for key in path_keys:
         if paths.get(key):
             p = Path(paths[key])
             paths[key] = str(p if p.is_absolute() else (root / p).resolve())
