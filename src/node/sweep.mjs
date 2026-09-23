@@ -25,7 +25,12 @@ export function daysBefore(date, n) {
  * @returns {Promise<{date: string, out: string, counts: object, lanes: object, errors: string[]}>}
  */
 export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, log = () => {} } = {}) {
-  if (!cfg.profile) throw new Error('sweep needs a profile: set paths.profile and fill config/profile.yml');
+  if (!cfg.profile) {
+    throw new Error(
+      'no profile found. Run `ajs init`, or point paths.profile at a filled-in profile.yml.\n' +
+      'The scan needs your target keywords and location rules to filter anything.'
+    );
+  }
 
   const days = sinceDays ?? cfg.windows?.full_sweep_days ?? 1;
   const since = daysBefore(date, days);

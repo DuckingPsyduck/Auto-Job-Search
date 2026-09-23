@@ -35,6 +35,7 @@ git clone https://github.com/YOUR-USER/auto-job-search
 cd auto-job-search
 npm install
 
+node bin/ajs.mjs demo     # see a sample workbook first — no setup, no network
 node bin/ajs.mjs init     # interactive setup, ~3 minutes
 node bin/ajs.mjs daily    # first scan
 ```
@@ -163,6 +164,7 @@ you miss. Check the dropped sheet weekly and adjust.
 ## Commands
 
 ```
+ajs demo        build a sample workbook from fixture data
 ajs init        set up your profile and configuration
 ajs daily       sweep + tracked + remote + enrich + score + report
 ajs sweep       discovery from the public index only

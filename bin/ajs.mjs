@@ -10,7 +10,7 @@
  * side-effect free apart from writing into the work and output directories.
  */
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { loadConfig, today, REPO_ROOT } from '../src/node/config.mjs';
 import { runSweep } from '../src/node/sweep.mjs';
@@ -23,6 +23,7 @@ const USAGE = `ajs <command> [options]
 
 Commands:
   init       set up your profile and configuration (start here)
+  demo       build a sample workbook from fixture data — no setup, no network
   daily      sweep + tracked + remote + enrich + report, in one go
   sweep      discover postings from the public dataset, filter and rank them
   tracked    scan the employer boards listed in portals.yml
@@ -115,6 +116,24 @@ async function main() {
       `\nNext: ajs daily\n`
     );
     return 0;
+  }
+
+  // `demo` shows the output before a user has a profile, so it falls back to the example
+  // configuration when none exists yet.
+  if (command === 'demo') {
+    const fallback = join(REPO_ROOT, 'config', 'scan-config.example.yml');
+    const demoCfg = loadConfig(args.config || (existsSync(join(REPO_ROOT, 'config', 'scan-config.yml'))
+      ? undefined
+      : fallback));
+    const input = join(REPO_ROOT, 'fixtures', 'demo-postings.jsonl');
+    const code = runPython(demoCfg, ['report', '--input', input, '--kind', 'demo'], log, 'demo');
+    if (code === 0) {
+      process.stdout.write(
+        '\nThat workbook was built from fixture data — 15 invented postings, no network, no profile.\n' +
+        'Run `ajs init` to set up your own, then `ajs daily`.\n'
+      );
+    }
+    return code;
   }
 
   const cfg = loadConfig(args.config);

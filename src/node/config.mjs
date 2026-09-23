@@ -44,7 +44,11 @@ function readYaml(file) {
 export function loadConfig(configPath) {
   const file = resolve(configPath || process.env.AJS_CONFIG || join(REPO_ROOT, 'config', 'scan-config.yml'));
   if (!existsSync(file)) {
-    throw new Error(`config not found: ${file}\nCopy config/scan-config.example.yml and edit it.`);
+    throw new Error(
+      `no configuration at ${file}\n\n` +
+      'Run `ajs init` to create one (about three minutes), or copy config/scan-config.example.yml\n' +
+      'and config/profile.example.yml by hand.'
+    );
   }
   const cfg = readYaml(file);
 

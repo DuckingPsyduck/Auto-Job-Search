@@ -24,6 +24,7 @@ paths:
     full_sweep: "ATS-Sweep-{date}.xlsx"
     remote_boards: "remote-boards-{date}.json"
     board_search: "Board-Search-{date}.xlsx"
+    demo: "Demo-{date}.xlsx"
 
 http:
   # Identify the client honestly and give a contact address; some boards block generic agents.

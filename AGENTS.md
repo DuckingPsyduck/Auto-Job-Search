@@ -64,6 +64,7 @@ Run from the repo root. Every command takes `--config <path>` and `--date YYYY-M
 
 | Command | What it does | Writes |
 |---|---|---|
+| `node bin/ajs.mjs demo` | Sample workbook from fixtures; no config or network needed | `output/Demo-{date}.xlsx` |
 | `node bin/ajs.mjs init` | Interactive setup; reads CVs to propose keywords | `config/profile.yml`, `config/scan-config.yml` |
 | `node bin/ajs.mjs daily` | Everything below, in order | all of the files below |
 | `node bin/ajs.mjs sweep` | Reads a public daily index of ~1.4M postings, filters locally | `.work/ranked-sweep-{date}.jsonl` |

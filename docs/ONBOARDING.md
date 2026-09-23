@@ -9,6 +9,20 @@ someone else.
 
 ---
 
+## See it first
+
+Before setting anything up:
+
+```bash
+ajs demo
+```
+
+That builds a workbook from fifteen invented postings — no configuration, no network, no data of
+yours. It is the fastest way to see what the tool produces and decide whether the rest is worth
+thirty minutes.
+
+---
+
 ## Before you start
 
 **Gather your CV files.** Put every `.docx` master in `private/cv/`. If you keep one CV, that's
