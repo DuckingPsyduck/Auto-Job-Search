@@ -1,9 +1,9 @@
 """Python side of the command line: reporting and scoring.
 
-The Node CLI (`careerkit`) shells out to these commands, so a user only learns one entry point.
+The Node CLI (`ajs`) shells out to these commands, so a user only learns one entry point.
 Run directly when debugging:
 
-    python -m careerkit.cli report --date 2026-09-21
+    python -m ajs.cli report --date 2026-09-21
 """
 from __future__ import annotations
 
@@ -116,7 +116,7 @@ def _score(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="careerkit-py", description="careerops-kit reporting and scoring")
+    parser = argparse.ArgumentParser(prog="ajs-py", description="auto-job-search reporting and scoring")
     parser.add_argument("--config", help="path to scan-config.yml")
     sub = parser.add_subparsers(dest="command", required=True)
 

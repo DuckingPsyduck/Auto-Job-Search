@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from careerkit.geo import Geo, workday_url_location
+from ajs.geo import Geo, workday_url_location
 
 ROOT = Path(__file__).resolve().parents[1]
 TERMS = json.load(io.open(ROOT / "config" / "geo-terms.json", encoding="utf-8"))

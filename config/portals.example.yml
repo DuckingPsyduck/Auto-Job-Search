@@ -1,4 +1,4 @@
-# careerops-kit — tracked employer boards
+# auto-job-search — tracked employer boards
 #
 # Copy to `config/portals.yml` and replace these with the employers you care about. The tracked
 # scan reads each board's own API directly, which gives you three things the public index can't:

@@ -1,4 +1,4 @@
-# careerops-kit — pipeline configuration
+# auto-job-search — pipeline configuration
 #
 # Copy to `config/scan-config.yml` and edit. Everything the scanners do is driven from here:
 # paths, sources, thresholds, title/lane matching and output naming. No candidate identity
@@ -27,7 +27,7 @@ paths:
 
 http:
   # Identify the client honestly and give a contact address; some boards block generic agents.
-  user_agent: "careerops-kit/0.1 (+{{CONTACT_EMAIL}})"
+  user_agent: "auto-job-search/0.1 (+{{CONTACT_EMAIL}})"
   timeout_ms: 25000
   retries: 3
   backoff_ms: 600                           # multiplied by attempt number

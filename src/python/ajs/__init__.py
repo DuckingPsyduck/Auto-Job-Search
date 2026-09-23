@@ -1,8 +1,8 @@
-"""careerops-kit: a configurable job-search pipeline.
+"""auto-job-search: a configurable job-search pipeline.
 
 Public surface:
-    ``careerkit.config.load_config`` — read and validate ``scan-config.yml`` + ``profile.yml``
-    ``careerkit.geo.Geo``           — classify and rank posting locations
+    ``ajs.config.load_config`` — read and validate ``scan-config.yml`` + ``profile.yml``
+    ``ajs.geo.Geo``           — classify and rank posting locations
 """
 from .config import Config, ConfigError, load_config, today  # noqa: F401
 from .geo import Geo, workday_url_location  # noqa: F401

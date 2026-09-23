@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * careerkit — command line entry point.
+ * ajs — command line entry point.
  *
  * Usage:
- *   careerkit sweep [--since N] [--date YYYY-MM-DD] [--chunks N] [--config path]
- *   careerkit config                      show the resolved configuration and exit
+ *   ajs sweep [--since N] [--date YYYY-MM-DD] [--chunks N] [--config path]
+ *   ajs config                      show the resolved configuration and exit
  *
  * Every command takes --config; the default is ./config/scan-config.yml. Commands are
  * side-effect free apart from writing into the work and output directories.
@@ -18,7 +18,7 @@ import { runTracked } from '../src/node/tracked.mjs';
 import { runRemote } from '../src/node/remote.mjs';
 import { runInit, findPython } from '../src/node/init.mjs';
 
-const USAGE = `careerkit <command> [options]
+const USAGE = `ajs <command> [options]
 
 Commands:
   init       set up your profile and configuration (start here)
@@ -55,7 +55,7 @@ function runPython(cfg, subcommand, log, label = subcommand[0]) {
   // --config is a top-level flag on the Python parser, so it goes before the subcommand.
   const res = spawnSync(
     python.cmd,
-    [...python.args, '-m', 'careerkit.cli', '--config', cfg.configFile, ...subcommand],
+    [...python.args, '-m', 'ajs.cli', '--config', cfg.configFile, ...subcommand],
     {
       stdio: 'inherit',
       env: { ...process.env, PYTHONPATH: join(REPO_ROOT, 'src', 'python'), PYTHONIOENCODING: 'utf-8' },
@@ -100,7 +100,7 @@ async function main() {
       `\nWrote ${result.profilePath}\n      ${result.scanPath}\n\n` +
       `${result.archetypes} target role(s), ${result.keywords} keywords, CVs in ${result.cvDir}\n` +
       (result.python ? '' : 'Python not detected: Excel reports are unavailable until it is installed.\n') +
-      `\nNext: careerkit daily\n`
+      `\nNext: ajs daily\n`
     );
     return 0;
   }

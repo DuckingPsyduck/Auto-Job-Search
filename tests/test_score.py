@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from careerkit.score import Scorer, confirmed_text, terms_in, load_vocab
+from ajs.score import Scorer, confirmed_text, terms_in, load_vocab
 
 ROOT = Path(__file__).resolve().parents[1]
 VOCAB_PATH = ROOT / "config" / "ats-vocab.yml"

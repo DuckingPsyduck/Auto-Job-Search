@@ -5,7 +5,7 @@
  * against the repo root, validates the handful of fields the pipeline cannot run without, and
  * returns one frozen object. Nothing else in the kit reads a config file directly.
  *
- * Resolution order for the root: CAREERKIT_ROOT env var, then `paths.root` in the config file,
+ * Resolution order for the root: AJS_ROOT env var, then `paths.root` in the config file,
  * then the directory containing the config file.
  */
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
@@ -42,13 +42,13 @@ function readYaml(file) {
  * @returns {object} frozen config with `.profile`, absolute `.paths.*` and helpers
  */
 export function loadConfig(configPath) {
-  const file = resolve(configPath || process.env.CAREERKIT_CONFIG || join(REPO_ROOT, 'config', 'scan-config.yml'));
+  const file = resolve(configPath || process.env.AJS_CONFIG || join(REPO_ROOT, 'config', 'scan-config.yml'));
   if (!existsSync(file)) {
     throw new Error(`config not found: ${file}\nCopy config/scan-config.example.yml and edit it.`);
   }
   const cfg = readYaml(file);
 
-  const root = resolve(process.env.CAREERKIT_ROOT || cfg?.paths?.root || dirname(dirname(file)));
+  const root = resolve(process.env.AJS_ROOT || cfg?.paths?.root || dirname(dirname(file)));
   const abs = p => (p == null ? p : isAbsolute(p) ? p : resolve(root, p));
 
   for (const key of REQUIRED) {

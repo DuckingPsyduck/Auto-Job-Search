@@ -108,14 +108,14 @@ def _assert_profile_filled(profile: dict, path: Path) -> None:
 def load_config(config_path: str | os.PathLike[str] | None = None) -> Config:
     """Load and validate the pipeline configuration.
 
-    Root resolution: ``CAREERKIT_ROOT``, then ``paths.root``, then the config file's parent.
+    Root resolution: ``AJS_ROOT``, then ``paths.root``, then the config file's parent.
     """
-    file = Path(config_path or os.environ.get("CAREERKIT_CONFIG") or REPO_ROOT / "config" / "scan-config.yml").resolve()
+    file = Path(config_path or os.environ.get("AJS_CONFIG") or REPO_ROOT / "config" / "scan-config.yml").resolve()
     if not file.exists():
         raise ConfigError(f"config not found: {file}\nCopy config/scan-config.example.yml and edit it.")
 
     raw = _read_yaml(file)
-    root = Path(os.environ.get("CAREERKIT_ROOT") or raw.get("paths", {}).get("root") or file.parent.parent).resolve()
+    root = Path(os.environ.get("AJS_ROOT") or raw.get("paths", {}).get("root") or file.parent.parent).resolve()
 
     for key in REQUIRED:
         if _get(raw, key) is None:
