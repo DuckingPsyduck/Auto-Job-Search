@@ -199,8 +199,6 @@ Flags: `--date YYYY-MM-DD`, `--since N` (discovery window), `--chunks N` (sample
   keep working.
 - **Its `first_seen` date lags the employer's.** That's why enrichment exists, and why the
   discovery window runs wider than the reporting window.
-- **Two ATS platforms have no detail reader yet** (BambooHR, Paylocity). Their postings appear,
-  marked `no reader`, without a confirmed date or pay.
 - **Location terms are US-centric out of the box.** `config/geo-terms.json` is editable, and
   both the Node and Python classifiers read from it.
 - **Excel reports and CV scoring need Python.** Scanning does not.

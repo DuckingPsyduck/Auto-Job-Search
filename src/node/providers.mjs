@@ -27,7 +27,12 @@ export function providerFor(url, ats = '') {
   if (/jobs\.ashbyhq\.com/.test(u)) return 'ashby';
   if (/myworkdayjobs\.com/.test(u)) return 'workday';
   if (/icims\.com/.test(u)) return 'icims';
-  return String(ats || '').toLowerCase();
+  if (/bamboohr\.com/.test(u)) return 'bamboohr';
+  if (/recruiting\.paylocity\.com/.test(u)) return 'paylocity';
+  const labelled = String(ats || '').toLowerCase();
+  if (providers[labelled]) return labelled;
+  // Remote feeds point at employers' own sites; those still have a readable page.
+  return /^https?:\/\//.test(u) ? 'generic' : '';
 }
 
 const providers = {
@@ -126,13 +131,121 @@ const providers = {
     };
   },
 
+  /**
+   * BambooHR: every careers site exposes `/careers/{id}/detail` as JSON, with a real
+   * `datePosted` and a structured location.
+   */
+  async bamboohr(url, cfg) {
+    const u = new URL(url);
+    const id = u.pathname.split('/').filter(Boolean).pop();
+    if (!id) return null;
+    const data = await fetchJson(`https://${u.hostname}/careers/${id}/detail`, cfg);
+    return parseBambooHr(data);
+  },
+
+  /**
+   * Paylocity: the posting page is client-rendered and exposes no JSON, but its Open Graph
+   * metadata carries the full description (a few thousand characters). No date is published
+   * anywhere on the page, so postings from here keep the discovery date and say so.
+   */
+  async paylocity(url, cfg) {
+    const html = await fetchText(url, cfg);
+    return html ? parsePaylocity(html) : null;
+  },
+
   /** iCIMS: no public API; the posting page carries the text. */
   async icims(url, cfg) {
     const html = await fetchText(`${url}${url.includes('?') ? '&' : '?'}in_iframe=1`, cfg);
     if (!html) return null;
     return { date_posted: '', date_basis: 'icims (page has no machine-readable date)', locations: [], remote_type: '', text: htmlToText(html) };
   },
+
+  /**
+   * Anything else — chiefly postings a remote feed points at, which land on an employer's own
+   * site rather than a known ATS. Reads structured data when the page publishes it (most job
+   * pages carry schema.org JobPosting), otherwise falls back to the page text.
+   */
+  async generic(url, cfg) {
+    const html = await fetchText(url, cfg);
+    if (!html) return null;
+    const posting = jsonLdJobPosting(html);
+    if (posting) {
+      const places = [posting.jobLocation].flat().filter(Boolean).map(l => {
+        const a = l.address || {};
+        return [a.addressLocality, a.addressRegion, a.addressCountry].filter(Boolean).join(', ');
+      }).filter(Boolean);
+      return {
+        date_posted: iso(posting.datePosted),
+        date_basis: 'schema.org JobPosting datePosted',
+        locations: places,
+        remote_type: posting.jobLocationType === 'TELECOMMUTE' ? 'Remote' : '',
+        text: htmlToText(posting.description),
+      };
+    }
+    const text = htmlToText(html);
+    return text.length < 400
+      ? null
+      : { date_posted: '', date_basis: 'page text (no machine-readable date)', locations: [], remote_type: '', text };
+  },
 };
+
+/** Pull a schema.org JobPosting out of a page's JSON-LD blocks, if it publishes one. */
+export function jsonLdJobPosting(html) {
+  for (const [, block] of String(html).matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const data = JSON.parse(block.trim());
+      for (const node of [data, ...(data['@graph'] || [])].flat()) {
+        if (node && node['@type'] === 'JobPosting') return node;
+      }
+    } catch {
+      // A malformed block is common on marketing pages; try the next one.
+    }
+  }
+  return null;
+}
+
+/**
+ * Shape a BambooHR `/careers/{id}/detail` payload into a detail record.
+ * Exported so the parsing can be tested without a network call.
+ */
+export function parseBambooHr(data) {
+  const job = data?.result?.jobOpening;
+  if (!job) return null;
+  const place = job.location || {};
+  const parts = [place.city, place.state, place.addressCountry].filter(Boolean);
+  const remote = /remote/i.test(String(job.locationType || ''));
+  return {
+    date_posted: iso(job.datePosted),
+    date_basis: 'bamboohr datePosted',
+    locations: parts.length ? [parts.join(', ')] : [],
+    remote_type: remote ? 'Remote' : '',
+    text: htmlToText(job.description),
+  };
+}
+
+/**
+ * Shape a Paylocity posting page into a detail record, reading the Open Graph metadata.
+ * Exported for testing; see the note on the provider about the missing date.
+ */
+export function parsePaylocity(html) {
+  const meta = name => {
+    const m = new RegExp(`<meta property="og:${name}" content="([\\s\\S]*?)"\\s*/?>`, 'i').exec(html);
+    return m ? htmlToText(m[1]) : '';
+  };
+  // Paylocity escapes the description twice on its way into the meta tag ("&amp;amp;"), so one
+  // decoding pass leaves entities behind.
+  const description = htmlToText(meta('description'));
+  if (!description) return null;
+  // og:title is "Company - Role - Location"; the tail is often the location, but not reliably,
+  // so it is left to the discovery record rather than guessed at here.
+  return {
+    date_posted: '',
+    date_basis: 'paylocity (page publishes no date)',
+    locations: [],
+    remote_type: '',
+    text: description,
+  };
+}
 
 /** "Posted 3 Days Ago" / "Posted Today" → an ISO date, relative to the run date. */
 export function relativeDate(text, runDate) {

@@ -35,6 +35,13 @@ shortlisted.
 | Ashby | `api.ashbyhq.com/posting-api/job-board/{slug}` | `publishedAt`, locations, description |
 | Workday | `{tenant}.{wd}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` | posted date (relative), full location list, description |
 | iCIMS | the posting page | description only; no machine-readable date |
+| BambooHR | `{company}.bamboohr.com/careers/{id}/detail` | `datePosted`, structured location, description |
+| Paylocity | the posting page's Open Graph metadata | full description; the page publishes no date |
+| anything else | the posting page | schema.org `JobPosting` when published, otherwise page text |
+
+The last row is the fallback for postings a remote feed points at, which land on an employer's
+own site rather than a known ATS. It reads the page the same way a search engine would: the
+structured data the site publishes for exactly that purpose, or failing that the visible text.
 
 **Basis:** these are the public endpoints that power each employer's own careers page — the same
 data any visitor's browser receives. We request only postings, never candidate data, and never

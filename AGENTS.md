@@ -245,8 +245,8 @@ close with what has no basis. Sections 5 and 7 apply unchanged.
 - **A location looks misclassified** — add the place to `config/geo-terms.json`. Both the Node
   and Python classifiers read it, and `tests/geo_cases.json` is where a regression gets locked
   in.
-- **`no reader for X`** — that ATS has no detail reader yet. The posting is real; only the date,
-  clearance and pay are missing.
+- **`no reader for X`** — no reader matched the URL, which now only happens when a record has no
+  usable link. The posting is real; only the date, clearance and pay are missing.
 - **A posting reappears daily** — reposts reset their date on the board. Check `repost_signal`
   and `date_first_seen`.
 - **Dates look stale** — run `date` first. Never trust a date carried in from earlier context.
