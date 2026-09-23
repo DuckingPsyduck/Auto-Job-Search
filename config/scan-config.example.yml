@@ -152,9 +152,19 @@ sources:
       chunks_api: "https://api.github.com/repos/Feashliaa/job-board-data/contents/data/chunks"
       homepage: "https://github.com/Feashliaa/job-board-aggregator"
       cache_ttl_hours: 20                   # refreshed daily upstream
+    # Used when `engine: live`, and automatically when the dataset cannot be read. Walks
+    # employer boards directly: slower and narrower than the index, but dependent on nobody.
     live:
-      # Fallback when the dataset is unavailable: walk the boards in portals.yml directly.
-      ats: [greenhouse, lever, ashby, workday]
+      # Public per-ATS slug lists. Board discovery only — postings still come from each
+      # employer's own API. Remove these to fall back to portals.yml alone.
+      slug_sources:
+        greenhouse: "https://raw.githubusercontent.com/Feashliaa/job-board-aggregator/main/data/greenhouse_companies.json"
+        lever: "https://raw.githubusercontent.com/Feashliaa/job-board-aggregator/main/data/lever_companies.json"
+        ashby: "https://raw.githubusercontent.com/Feashliaa/job-board-aggregator/main/data/ashby_companies.json"
+        workday: "https://raw.githubusercontent.com/Feashliaa/job-board-aggregator/main/data/workday_companies.json"
+      # Reading boards is one request each, so this is capped. Employers from portals.yml are
+      # always included first and never displaced by the cap.
+      max_boards: 400
 
 flags:
   aggregator_companies: [jobgether]          # reposters: note "find the real employer"

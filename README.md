@@ -195,8 +195,9 @@ Flags: `--date YYYY-MM-DD`, `--since N` (discovery window), `--chunks N` (sample
 ## Limitations
 
 - **The public index is a third-party project** ([job-board-aggregator](https://github.com/Feashliaa/job-board-aggregator),
-  refreshed daily). If it stops, the broad sweep stops with it; tracked boards and remote feeds
-  keep working.
+  refreshed daily). If it cannot be read, the sweep falls back to reading employer boards
+  directly — slower and narrower, capped at `sources.full_sweep.live.max_boards`, but it
+  depends on nobody. Set `sources.full_sweep.engine: live` to make that the normal path.
 - **Its `first_seen` date lags the employer's.** That's why enrichment exists, and why the
   discovery window runs wider than the reporting window.
 - **Location terms are US-centric out of the box.** `config/geo-terms.json` is editable, and

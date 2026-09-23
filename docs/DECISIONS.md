@@ -187,3 +187,17 @@ The original plan was to copy career-ops' `scan-ats-full.mjs`. Tracing its impor
 and 13,357 lines, most of it tracker and plugin machinery we don't use. Reading the public index
 directly took about 200 lines, covers two additional ATS platforms, and runs in seconds instead
 of hours. MIT allowed the copy; the maintenance burden argued against it.
+
+### The sweep has a second engine, and switches to it on its own
+
+Discovery rests on one third-party index. That is a fine dependency until the morning it does not
+publish, and a job search that skips a day is worse than a job search that runs slowly. So the
+same filtering pipeline can be fed from employer boards read directly — the tracked scan, pointed
+at public per-ATS company lists instead of one user's portals file.
+
+It is the fallback, not the default: 25 boards yielded ~4,000 postings against the index's
+1.4M, so its coverage is a fraction, and every board is a request. `max_boards` caps it, boards
+from `portals.yml` go first so the cap never cuts the employers a user chose, and a failed
+dataset read falls through to it automatically with a line saying so. Both engines return the
+same shape, so nothing downstream knows which one ran — except the `source` field on each row,
+which says `live`.

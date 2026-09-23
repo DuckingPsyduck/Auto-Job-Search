@@ -130,6 +130,35 @@ const listers = {
 };
 
 /**
+ * Read every board in `boards` through its provider and return raw postings.
+ *
+ * Shared by the tracked scan and by the live sweep fallback, which is the same operation at a
+ * different scale. A board that fails or returns nothing is reported, not thrown: one dead board
+ * must not end a run over hundreds.
+ *
+ * @returns {Promise<{rows: object[], empty: string[], failed: string[]}>}
+ */
+export async function scanBoards(cfg, boards, date) {
+  const rows = [];
+  const empty = [];
+  const failed = [];
+  await pool(boards, cfg.http?.concurrency?.default || 6, async board => {
+    const label = board.name || board.slug || board.tenant || 'board';
+    try {
+      const postings = await listers[board.provider](board, cfg, date);
+      if (!postings.length) empty.push(label);
+      for (const posting of postings) {
+        if (!posting.url || !posting.title) continue;
+        rows.push({ id: idFor(posting.url), date_first_seen: date, scraped_at: date, ...posting });
+      }
+    } catch (err) {
+      failed.push(`${label}: ${err.message}`);
+    }
+  });
+  return { rows, empty, failed };
+}
+
+/**
  * @param {object} cfg
  * @param {{date?: string, sinceDays?: number, log?: Function}} [opts]
  */
@@ -150,26 +179,7 @@ export async function runTracked(cfg, { date = today(), sinceDays, log = () => {
 
   log(`tracked ${date}: ${boards.length} boards, window ${since} .. ${date}`);
 
-  const rows = [];
-  const empty = [];
-  const failed = [];
-  await pool(boards, cfg.http?.concurrency?.default || 6, async board => {
-    try {
-      const postings = await listers[board.provider](board, cfg, date);
-      if (!postings.length) empty.push(board.name || board.slug || board.tenant);
-      for (const posting of postings) {
-        if (!posting.url || !posting.title) continue;
-        rows.push({
-          id: idFor(posting.url),
-          date_first_seen: date,
-          scraped_at: date,
-          ...posting,
-        });
-      }
-    } catch (err) {
-      failed.push(`${board.name || board.slug}: ${err.message}`);
-    }
-  });
+  const { rows, empty, failed } = await scanBoards(cfg, boards, date);
 
   const seen = new Set();
   const kept = [];

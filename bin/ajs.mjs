@@ -146,7 +146,7 @@ async function main() {
         limitChunks: args.chunks ? Number(args.chunks) : undefined,
         log,
       });
-      const lanes = Object.entries(result.lanes).sort((a, b) => b[1] - a[1])
+      const lanes = Object.entries(result.lanes || {}).sort((a, b) => b[1] - a[1])
         .map(([lane, n]) => `${lane} ${n}`).join(' · ');
       process.stdout.write(
         `${result.date} | shortlist ${result.counts.shortlist} | check ${result.counts.check} | ` +

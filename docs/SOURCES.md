@@ -23,6 +23,16 @@ automated access, it is a browser-only source and does not belong in the pipelin
   posting date. Never reported as a posting date — see [DECISIONS](DECISIONS.md#dates).
 - **Politeness:** one CDN fetch per chunk per day, skipped entirely when the ETag is unchanged.
 
+### Public per-ATS company lists
+
+- **What:** the slug lists that same project publishes — which companies host a board on
+  Greenhouse, Lever, Ashby and Workday. Names only; no postings.
+- **Where:** `data/*_companies.json` in the code repository (MIT).
+- **Used for:** the live sweep, the fallback that runs when the index cannot be read. Board
+  discovery only — every posting still comes from the employer's own API below.
+- **Politeness:** four cached fetches a day, and `max_boards` caps how many boards a run reads.
+  Postings are read at the same rate as any tracked board.
+
 ### Employer ATS APIs
 
 Read directly for the employers in `config/portals.yml`, and for enrichment of anything

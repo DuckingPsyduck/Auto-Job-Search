@@ -67,7 +67,7 @@ Run from the repo root. Every command takes `--config <path>` and `--date YYYY-M
 | `node bin/ajs.mjs demo` | Sample workbook from fixtures; no config or network needed | `output/Demo-{date}.xlsx` |
 | `node bin/ajs.mjs init` | Interactive setup; reads CVs to propose keywords | `config/profile.yml`, `config/scan-config.yml` |
 | `node bin/ajs.mjs daily` | Everything below, in order | all of the files below |
-| `node bin/ajs.mjs sweep` | Reads a public daily index of ~1.4M postings, filters locally | `.work/ranked-sweep-{date}.jsonl` |
+| `node bin/ajs.mjs sweep` | Reads a public daily index of ~1.4M postings, filters locally. Falls back to reading employer boards directly when the index is unavailable | `.work/ranked-sweep-{date}.jsonl` |
 | `node bin/ajs.mjs tracked` | Reads the employer boards in `portals.yml` directly | `.work/ranked-tracked-{date}.jsonl` |
 | `node bin/ajs.mjs remote` | Pulls the configured remote-job feeds | `.work/ranked-remote-{date}.jsonl` |
 | `node bin/ajs.mjs enrich` | For survivors only: fetches the employer's own record | `.work/enriched-{date}.jsonl`, `.work/cache/jd/{id}.txt` |
@@ -101,7 +101,7 @@ node -e "require('fs').readFileSync('.work/enriched-2026-09-22.jsonl','utf8').sp
 | Field | Meaning |
 |---|---|
 | `id` | Stable id from the normalized URL; the same posting from two sources has one id |
-| `source` | `dataset`, `tracked` or `remote`; `also_seen_in` when more than one found it |
+| `source` | `dataset`, `live`, `tracked` or `remote`; `also_seen_in` when more than one found it |
 | `company`, `title`, `url`, `locations` | As published |
 | `date_first_seen` | When the public index first saw it. **A discovery signal, not a posting date** |
 | `date_posted`, `date_basis` | The employer's own date and where it came from. Blank if the record could not be read |

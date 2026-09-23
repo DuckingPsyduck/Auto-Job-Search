@@ -11,6 +11,7 @@ import { Geo } from './geo.mjs';
 import { walkDataset } from './dataset.mjs';
 import { buildTitleMatcher, buildLaneMatcher, buildCoverage, classify } from './filters.mjs';
 import { today, workPath } from './config.mjs';
+import { runLive } from './live.mjs';
 
 /** ISO date N days before `date`. */
 export function daysBefore(date, n) {
@@ -32,6 +33,13 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
     );
   }
 
+  const engine = cfg.sources?.full_sweep?.engine || 'dataset';
+  if (engine === 'off') {
+    log('sweep disabled (sources.full_sweep.engine: off)');
+    return { date, out: null, counts: {}, lanes: {}, errors: [] };
+  }
+  if (engine === 'live') return runLive(cfg, { date, sinceDays, log });
+
   const days = sinceDays ?? cfg.windows?.full_sweep_days ?? 1;
   const since = daysBefore(date, days);
 
@@ -52,7 +60,9 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
 
   log(`sweep ${date}: window ${since} .. ${date} (${days}d), keywords ${ctx.titles.positive.length}`);
 
-  const stats = await walkDataset(
+  let stats;
+  try {
+    stats = await walkDataset(
     cfg,
     posting => {
       counts.seen++;
@@ -73,11 +83,18 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
       if (row.verdict !== 'dropped') lanes[row.lane] = (lanes[row.lane] || 0) + 1;
       out.write(`${JSON.stringify(row)}\n`);
     },
-    {
-      limitChunks,
-      onProgress: (s, chunk) => log(`  ${chunk.name}: ${s.records.toLocaleString()} records read`),
-    }
-  );
+      {
+        limitChunks,
+        onProgress: (s, chunk) => log(`  ${chunk.name}: ${s.records.toLocaleString()} records read`),
+      }
+    );
+  } catch (err) {
+    // The index is one third-party project. If it cannot be read, fall back to reading boards
+    // directly rather than returning an empty day.
+    await new Promise(resolve => out.end(resolve));
+    log(`public index unavailable (${err.message}); falling back to a live sweep`);
+    return runLive(cfg, { date, sinceDays, log });
+  }
 
   await new Promise(resolve => out.end(resolve));
 
