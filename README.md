@@ -215,13 +215,20 @@ Flags: `--date YYYY-MM-DD`, `--since N` (discovery window), `--chunks N` (sample
 | [docs/RUNBOOK.md](docs/RUNBOOK.md) | The daily and weekly rhythm; what to do with the workbook |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Why the pipeline behaves as it does, with the incidents behind each rule |
 | [docs/SOURCES.md](docs/SOURCES.md) | Every data source, its access basis, and the ones we rejected |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setting up to develop, adding a provider or a feed, what gets merged |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | How we treat each other here |
 
 ## Development
 
 ```bash
 npm test                              # Node tests
 python -m pytest tests -q             # Python tests (needs PYTHONPATH=src/python)
+python -m ruff check .                # Python lint
+node tools/privacy-check.mjs          # no personal data in tracked files
 ```
+
+Contributions are welcome — [CONTRIBUTING.md](CONTRIBUTING.md) covers the setup, the three rules
+that aren't negotiable, and what adding an ATS provider or a job feed involves.
 
 The location classifier exists twice, once per language, and both read the same term list and
 the same fixture file (`tests/geo_cases.json`) so they cannot drift apart. Fixtures carry real
