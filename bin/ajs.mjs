@@ -10,7 +10,8 @@
  * side-effect free apart from writing into the work and output directories.
  */
 import { spawnSync } from 'node:child_process';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { loadConfig, today, REPO_ROOT } from '../src/node/config.mjs';
 import { runSweep } from '../src/node/sweep.mjs';
 import { runEnrich } from '../src/node/enrich.mjs';
@@ -38,6 +39,8 @@ Options:
   --chunks <n>      read only the first N dataset chunks (for a quick check)
   --limit <n>       enrich at most N postings
   --input <path>    enrich a specific ranked file
+  --answers <path>  init: answer the setup questions from a JSON file
+  --force           init: overwrite an existing configuration
   --quiet           only print the summary line
   -h, --help        this text
 `;
@@ -76,7 +79,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') args.help = true;
-    else if (a === '--quiet') args.quiet = true;
+    // Boolean flags take no value; everything else consumes the next argument.
+    else if (a === '--quiet' || a === '--force') args[a.slice(2)] = true;
     else if (a.startsWith('--')) args[a.slice(2)] = argv[++i];
     else args._.push(a);
   }
@@ -95,7 +99,15 @@ async function main() {
 
   // `init` runs before any configuration exists, so it must not load one.
   if (command === 'init') {
-    const result = await runInit({ force: Boolean(args.force) });
+    // --answers makes setup scriptable: same questions, supplied up front. See
+    // fixtures/demo-answers.json for the shape.
+    const answers = args.answers ? JSON.parse(readFileSync(args.answers, 'utf8')) : null;
+    const result = await runInit({
+      force: Boolean(args.force),
+      answers,
+      // Writing beside the config the user named keeps `--config` meaningful for setup too.
+      configDir: args.config ? dirname(resolve(args.config)) : undefined,
+    });
     process.stdout.write(
       `\nWrote ${result.profilePath}\n      ${result.scanPath}\n\n` +
       `${result.archetypes} target role(s), ${result.keywords} keywords, CVs in ${result.cvDir}\n` +

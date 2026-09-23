@@ -39,6 +39,9 @@ node bin/ajs.mjs init     # interactive setup, ~3 minutes
 node bin/ajs.mjs daily    # first scan
 ```
 
+Prefer not to answer prompts? `ajs init --answers answers.json` takes the same questions from a
+JSON file — see `fixtures/demo-answers.json`.
+
 `init` asks what the tool cannot infer — your target roles, where you will and won't work, a
 pay floor, clearance status — and reads your CV files to propose the keywords it searches on.
 Put your CV masters (`.docx`) in `private/cv/` before running it, and the suggestions get much

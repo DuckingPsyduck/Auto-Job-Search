@@ -116,9 +116,15 @@ def load_config(config_path: str | os.PathLike[str] | None = None) -> Config:
         raise ConfigError(f"config not found: {file}\nCopy config/scan-config.example.yml and edit it.")
 
     raw = _read_yaml(file)
-    root = Path(
-        os.environ.get("AJS_ROOT") or raw.get("paths", {}).get("root") or file.parent.parent
-    ).resolve()
+    # A relative ``paths.root`` (the default, ".") is relative to the config file's own location,
+    # not to the current working directory — otherwise a config outside the repo would resolve
+    # its profile and CV paths against wherever the command happened to be run.
+    configured_root = os.environ.get("AJS_ROOT") or raw.get("paths", {}).get("root") or "."
+    root = (
+        Path(configured_root).resolve()
+        if Path(configured_root).is_absolute()
+        else (file.parent.parent / configured_root).resolve()
+    )
 
     for key in REQUIRED:
         if _get(raw, key) is None:

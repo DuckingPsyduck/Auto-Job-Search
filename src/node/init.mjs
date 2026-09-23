@@ -43,23 +43,43 @@ function suggestFromCvs(python, cvDir) {
 const list = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
 const yes = s => /^y(es)?$/i.test(String(s || '').trim());
 
-export async function runInit({ configDir = join(REPO_ROOT, 'config'), force = false } = {}) {
+/**
+ * @param {object} [opts]
+ * @param {string} [opts.configDir] where to write the two config files
+ * @param {boolean} [opts.force] overwrite an existing configuration
+ * @param {object|null} [opts.answers] pre-supplied answers; when given, nothing is prompted.
+ *   Keys match the prompts below (full_name, email, home_state, archetypes, …). This is what
+ *   makes setup scriptable — for tests, for CI, and for an agent running setup on a user's
+ *   behalf from information it already has.
+ */
+export async function runInit({ configDir = join(REPO_ROOT, 'config'), force = false, answers = null } = {}) {
   const profilePath = join(configDir, 'profile.yml');
   const scanPath = join(configDir, 'scan-config.yml');
   if (!force && (existsSync(profilePath) || existsSync(scanPath))) {
     throw new Error(`config already exists in ${configDir}. Re-run with --force to overwrite.`);
   }
-  if (!stdin.isTTY) {
-    throw new Error('init is interactive; run it in a terminal (or copy config/*.example.yml by hand).');
+  if (!answers && !stdin.isTTY) {
+    throw new Error(
+      'init is interactive; run it in a terminal, pass --answers <file.json>, ' +
+      'or copy config/*.example.yml by hand.'
+    );
   }
 
-  const rl = createInterface({ input: stdin, output: stdout });
-  const ask = async (question, fallback = '') => {
+  const rl = answers ? null : createInterface({ input: stdin, output: stdout });
+  /** Ask, or take the value from the answers file, or fall back to the default. */
+  const ask = async (question, fallback = '', key = null) => {
+    if (answers) {
+      const supplied = key && answers[key] !== undefined ? answers[key] : undefined;
+      return String(supplied ?? fallback).trim();
+    }
     const answer = (await rl.question(fallback ? `${question} [${fallback}] ` : `${question} `)).trim();
     return answer || fallback;
   };
+  const say = msg => {
+    if (!answers) stdout.write(msg);
+  };
 
-  stdout.write(`
+  say(`
 auto-job-search setup
 -------------------
 This writes config/profile.yml (your details, never committed) and config/scan-config.yml
@@ -68,53 +88,61 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
 `);
 
   // 1. Identity -------------------------------------------------------------------------
-  const full_name = await ask('Your full name:');
-  const email = await ask('Email:');
-  const phone = await ask('Phone (optional):');
-  const linkedin = await ask('LinkedIn URL (optional):');
-  const github = await ask('GitHub/portfolio URL (optional):');
+  const full_name = await ask('Your full name:', '', 'full_name');
+  const email = await ask('Email:', '', 'email');
+  const phone = await ask('Phone (optional):', '', 'phone');
+  const linkedin = await ask('LinkedIn URL (optional):', '', 'linkedin');
+  const github = await ask('GitHub/portfolio URL (optional):', '', 'github');
 
   // 2. Eligibility ----------------------------------------------------------------------
-  const citizenship = await ask('Country you can work in without sponsorship:', 'US');
-  const clearanceCurrent = (await ask('Security clearance — active, inactive or none?', 'none')).toLowerCase();
+  const citizenship = await ask('Country you can work in without sponsorship:', 'US', 'citizenship');
+  const clearanceCurrent = (await ask('Security clearance — active, inactive or none?', 'none', 'clearance_current')).toLowerCase();
   const clearanceHighest = clearanceCurrent === 'none'
-    ? await ask('Highest clearance ever held (blank if none):')
-    : await ask('Clearance level:');
+    ? await ask('Highest clearance ever held (blank if none):', '', 'clearance_highest')
+    : await ask('Clearance level:', '', 'clearance_highest');
 
   // 3. Location -------------------------------------------------------------------------
-  const home_state = (await ask('Home state/region code (e.g. TX):')).toUpperCase();
-  const relocating = yes(await ask('Are you relocating out of there? (y/n)', 'n'));
-  const preferred = list(await ask('Preferred cities, comma separated (optional):'));
-  const excluded = list(await ask('Cities to avoid, comma separated (optional):'));
-  const remote_ok = yes(await ask('Include remote roles? (y/n)', 'y'));
+  const home_state = (await ask('Home state/region code (e.g. TX):', '', 'home_state')).toUpperCase();
+  const relocating = yes(await ask('Are you relocating out of there? (y/n)', 'n', 'relocating'));
+  const preferred = list(await ask('Preferred cities, comma separated (optional):', '', 'preferred_cities'));
+  const excluded = list(await ask('Cities to avoid, comma separated (optional):', '', 'excluded_cities'));
+  const remote_ok = yes(await ask('Include remote roles? (y/n)', 'y', 'remote_ok'));
 
   // 4. Money ----------------------------------------------------------------------------
-  const base_floor = Number(await ask('Minimum acceptable base salary (0 for none):', '0')) || 0;
-  const target_min = Number(await ask('Target base, low end (0 to skip):', '0')) || 0;
-  const target_max = Number(await ask('Target base, high end (0 to skip):', '0')) || 0;
+  const base_floor = Number(await ask('Minimum acceptable base salary (0 for none):', '0', 'base_floor')) || 0;
+  const target_min = Number(await ask('Target base, low end (0 to skip):', '0', 'target_min')) || 0;
+  const target_max = Number(await ask('Target base, high end (0 to skip):', '0', 'target_max')) || 0;
 
   // 5. CVs and keywords -----------------------------------------------------------------
   const defaultCvDir = join(REPO_ROOT, 'private', 'cv');
-  const cvDir = resolve(await ask('Folder holding your CV .docx files:', defaultCvDir));
+  const cvDir = resolve(await ask('Folder holding your CV .docx files:', defaultCvDir, 'cv_dir'));
   mkdirSync(cvDir, { recursive: true });
 
   const python = findPython();
   if (!python) {
-    stdout.write('\nNote: Python with openpyxl and PyYAML was not found. Scanning works without it;\n' +
+    say('\nNote: Python with openpyxl and PyYAML was not found. Scanning works without it;\n' +
                  'Excel reports and CV keyword suggestions need it. See README.\n');
   }
   const suggestions = suggestFromCvs(python, cvDir);
   if (suggestions?.files?.length) {
-    stdout.write(`\nRead ${suggestions.files.length} CV file(s).\n`);
-    if (suggestions.titles.length) stdout.write(`Roles found: ${suggestions.titles.join(', ')}\n`);
-    if (suggestions.skills.length) stdout.write(`Skills found: ${suggestions.skills.slice(0, 12).join(', ')}\n`);
+    say(`\nRead ${suggestions.files.length} CV file(s).\n`);
+    if (suggestions.titles.length) say(`Roles found: ${suggestions.titles.join(', ')}\n`);
+    if (suggestions.skills.length) say(`Skills found: ${suggestions.skills.slice(0, 12).join(', ')}\n`);
   } else if (python) {
-    stdout.write('\nNo .docx CVs found in that folder — you can add them later and re-run init.\n');
+    say('\nNo .docx CVs found in that folder — you can add them later and re-run init.\n');
   }
 
-  const archetypes = [];
+  // Answers may supply archetypes directly: [{name, keywords: [...], cv}]
+  const archetypes = Array.isArray(answers?.archetypes)
+    ? answers.archetypes.map((a, i) => ({
+        name: String(a.name || '').trim(),
+        priority: i === 0 ? 'primary' : 'secondary',
+        keywords: Array.isArray(a.keywords) ? a.keywords : list(a.keywords),
+        cv: a.cv || '',
+      })).filter(a => a.name && a.keywords.length)
+    : [];
   const suggestedTitles = suggestions?.titles || [];
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; !answers && i <= 3; i++) {
     const fallbackName = suggestedTitles[i - 1] || '';
     const name = await ask(`\nTarget role ${i} (blank to stop):`, i === 1 ? fallbackName : '');
     if (!name) break;
@@ -124,11 +152,11 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
     archetypes.push({ name, priority: i === 1 ? 'primary' : 'secondary', keywords, cv });
   }
   if (!archetypes.length) {
-    rl.close();
+    rl?.close();
     throw new Error('at least one target role is required — the scanners match on its keywords');
   }
 
-  await rl.close();
+  await rl?.close();
 
   // 6. Write the files -------------------------------------------------------------------
   const profile = {

@@ -75,6 +75,19 @@ you'd never take. Adjust after the first few runs — the Dropped sheet tells yo
 
 ---
 
+## Scripted setup
+
+If you already know the answers — you're setting this up for someone else, or re-creating a
+configuration — skip the prompts:
+
+```bash
+ajs init --answers answers.json
+```
+
+`fixtures/demo-answers.json` is a working example: one key per question, and an `archetypes` list
+of `{name, keywords, cv}`. Anything you leave out falls back to the same default the prompt
+would have offered.
+
 ## First run
 
 ```bash

@@ -30,7 +30,17 @@ npm install
 node bin/ajs.mjs init        # interactive: writes config/profile.yml and config/scan-config.yml
 ```
 
-If the user would rather not answer prompts, copy the templates yourself and fill them in:
+Setup can also run without prompts, which is what you should use when you already have the
+answers — from a conversation, a CV, or a previous config:
+
+```bash
+node bin/ajs.mjs init --answers answers.json
+```
+
+See `fixtures/demo-answers.json` for the shape: one key per question, plus an `archetypes` list
+of `{name, keywords, cv}`. Confirm the answers with the user before writing them.
+
+If you would rather not use `init` at all, copy the templates and fill them in:
 
 ```bash
 cp config/profile.example.yml config/profile.yml

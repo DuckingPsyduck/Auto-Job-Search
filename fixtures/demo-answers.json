@@ -1,0 +1,38 @@
+{
+  "_note": "Example answers for `ajs init --answers <file>`. Every key matches one setup question. Useful for scripted setup, CI, and for an agent configuring the tool on someone's behalf.",
+
+  "full_name": "Alex Rivera",
+  "email": "alex.rivera@example.com",
+  "phone": "(555) 010-0199",
+  "linkedin": "linkedin.com/in/example",
+  "github": "github.com/example",
+
+  "citizenship": "US",
+  "clearance_current": "none",
+  "clearance_highest": "",
+
+  "home_state": "TX",
+  "relocating": "y",
+  "preferred_cities": "Denver, Seattle",
+  "excluded_cities": "",
+  "remote_ok": "y",
+
+  "base_floor": 90000,
+  "target_min": 110000,
+  "target_max": 150000,
+
+  "cv_dir": "private/cv",
+
+  "archetypes": [
+    {
+      "name": "Data Engineer (mid)",
+      "keywords": ["data engineer", "analytics engineer", "database engineer", "data platform"],
+      "cv": "data-engineer.docx"
+    },
+    {
+      "name": "Systems Administrator / SRE",
+      "keywords": ["systems administrator", "system administrator", "site reliability", "devops engineer"],
+      "cv": "sysadmin.docx"
+    }
+  ]
+}

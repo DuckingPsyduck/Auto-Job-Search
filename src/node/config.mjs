@@ -48,7 +48,13 @@ export function loadConfig(configPath) {
   }
   const cfg = readYaml(file);
 
-  const root = resolve(process.env.AJS_ROOT || cfg?.paths?.root || dirname(dirname(file)));
+  // A relative `paths.root` (the default, ".") is relative to the config file's own location —
+  // config/scan-config.yml means "the directory above config/". Resolving it against the current
+  // working directory instead would make a config outside the repo point at the wrong profile.
+  const configuredRoot = process.env.AJS_ROOT || cfg?.paths?.root || '.';
+  const root = isAbsolute(configuredRoot)
+    ? resolve(configuredRoot)
+    : resolve(dirname(file), '..', configuredRoot);
   const abs = p => (p == null ? p : isAbsolute(p) ? p : resolve(root, p));
 
   for (const key of REQUIRED) {
