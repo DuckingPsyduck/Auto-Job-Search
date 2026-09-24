@@ -118,6 +118,15 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _keywords(args: argparse.Namespace) -> int:
+    """Report which target keywords are working, and what the scan is throwing away."""
+    from .keywords import report as keyword_report
+
+    cfg = load_config(args.config)
+    print(keyword_report(cfg, args.date or today()))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="ajs-py", description="auto-job-search reporting and scoring")
     parser.add_argument("--config", help="path to scan-config.yml")
@@ -138,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
     score.add_argument("--date", help="run date (default: today)")
     score.add_argument("--jd-file", help="score a single job description from a file instead")
     score.set_defaults(func=_score)
+
+    keywords = sub.add_parser("keywords", help="which keywords are working, and what is being missed")
+    keywords.add_argument("--date", help="run date (default: today)")
+    keywords.set_defaults(func=_keywords)
 
     args = parser.parse_args(argv)
     try:

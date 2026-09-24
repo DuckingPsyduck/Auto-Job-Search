@@ -14,24 +14,23 @@ Without it, PDFs are skipped and `unreadable` says why, rather than the folder a
 """
 from __future__ import annotations
 
+import json
 import re
 import zipfile
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-#: Role words that make a job title. Used to propose archetype keywords from CV headings.
-TITLE_WORDS = re.compile(
-    r"\b("
-    r"(?:senior |lead |staff |principal |mid[- ]level )?"
-    r"(?:data|software|systems?|security|network|cloud|platform|site reliability|devops|database|"
-    r"analytics|business intelligence|machine learning|intelligence|support|infrastructure|qa|test)"
-    r"[ -]?(?:engineer|engineering|administrator|analyst|architect|developer|scientist|specialist|"
-    r"technician|manager)"
-    r")\b",
-    re.I,
-)
+#: Default location of the shared job-title vocabulary.
+TITLE_TERMS = Path(__file__).resolve().parents[3] / "config" / "title-terms.json"
+
+#: Words that introduce an employer or a place, so the phrase after them is not a title.
+_CONNECTORS = frozenset({"at", "for", "with", "in", "of", "to", "from", "by"})
+
+#: A word inside a job title: letters, and the joiners titles actually use.
+_WORD = re.compile(r"[A-Za-z][A-Za-z'&/.-]*")
 
 _PARAGRAPH = re.compile(r"<w:p[ >].*?</w:p>", re.S)
 _TEXT = re.compile(r"<w:t[^>]*>([^<]*)</w:t>")
@@ -86,7 +85,9 @@ def read_cv_dir(cv_dir: str | Path) -> tuple[dict[str, str], dict[str, str]]:
         except ImportError:
             unreadable[path.name] = 'PDF support needs pypdf: pip install "auto-job-search[pdf]"'
             continue
-        except (zipfile.BadZipFile, KeyError, OSError, ValueError) as err:
+        except Exception as err:  # noqa: BLE001 - a third-party parser can raise anything,
+            # and one damaged CV must never stop onboarding. pypdf alone raises PdfStreamError,
+            # PdfReadError, DependencyError and more; naming them is a losing game.
             unreadable[path.name] = f"{type(err).__name__}: {err}"
             continue
         if text.strip():
@@ -96,12 +97,71 @@ def read_cv_dir(cv_dir: str | Path) -> tuple[dict[str, str], dict[str, str]]:
     return out, unreadable
 
 
-def suggest_titles(texts: dict[str, str], limit: int = 12) -> list[str]:
+@lru_cache(maxsize=4)
+def load_title_terms(path: str | Path = TITLE_TERMS) -> tuple[frozenset, frozenset, frozenset, frozenset]:
+    """(role nouns, qualifiers, stop words, trailing markers) from the shared vocabulary."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return (
+        frozenset(w.lower() for w in data.get("role_nouns", [])),
+        frozenset(w.lower() for w in data.get("qualifiers", [])),
+        frozenset(w.lower() for w in data.get("stop_words", [])),
+        frozenset(w.lower() for w in data.get("trailing", [])),
+    )
+
+
+def titles_in(text: str, path: str | Path = TITLE_TERMS, max_words: int = 4) -> list[str]:
+    """
+    Every job title in a block of text, lowercased.
+
+    A title is a short noun phrase ending in a role noun — "registered nurse", "senior data
+    engineer", "diesel mechanic". Reading it that way finds titles in any field; the previous
+    version matched a hard-coded list of IT roles, so a nurse's CV proposed nothing at all.
+    """
+    nouns, qualifiers, stops, trailing = load_title_terms(path)
+    found: list[str] = []
+    # Punctuation ends a phrase: a title never runs across a comma, a period or a line break.
+    for segment in re.split(r"[^A-Za-z'&/\- ]+", text):
+        words = _WORD.findall(segment)
+        lowered = [w.lower().strip(".") for w in words]
+        for i, word in enumerate(lowered):
+            if word not in nouns:
+                continue
+            # Walk left from the role noun for the longest phrase that still reads as a title.
+            start = i
+            while start > 0 and i - start + 1 < max_words:
+                previous = lowered[start - 1]
+                # A role noun may sit inside a title ("nurse manager", "engineer supervisor"),
+                # so it does not stop the walk — only prose and level markers do.
+                if previous in stops or previous in trailing:
+                    break
+                if len(previous) < 2:
+                    break
+                # "Senior Data Engineer at Acme Systems Administrator" — a word introduced by a
+                # preposition is an employer or a place, not part of the title before it.
+                if start > 1 and lowered[start - 2] in _CONNECTORS:
+                    break
+                start -= 1
+            phrase = lowered[start : i + 1]
+            while phrase and (phrase[0] in qualifiers or phrase[0] in trailing):
+                phrase = phrase[1:]
+            if phrase and phrase[-1] in nouns:
+                found.append(" ".join(phrase))
+    return found
+
+
+def suggest_titles(
+    texts: dict[str, str], limit: int = 12, terms_path: str | Path = TITLE_TERMS
+) -> list[str]:
     """Role titles that appear in the documents, most frequent first."""
     counter: Counter[str] = Counter()
     for text in texts.values():
-        for match in TITLE_WORDS.findall(text):
-            counter[re.sub(r"\s+", " ", match).strip().lower()] += 1
+        counter.update(titles_in(text, terms_path))
+    # A bare role noun ("manager") is only worth proposing when nothing qualifies it, because
+    # on its own it matches half a job board.
+    qualified = {t for t in counter if " " in t}
+    for title in list(counter):
+        if " " not in title and any(q.endswith(f" {title}") for q in qualified):
+            del counter[title]
     return [title for title, _ in counter.most_common(limit)]
 
 

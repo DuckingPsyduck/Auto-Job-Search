@@ -137,7 +137,8 @@ field.
 
 ## The first week
 
-**Day 1–2 — tune keywords.** Run daily, read the Dropped sheet, add the variants you're missing
+**Day 1–2 — tune keywords.** Run daily, run `ajs keywords` to see which of yours matched
+nothing and what the scan discarded that looks like your work, add the variants you're missing
 and exclude the ones you keep rejecting. This is the only setting worth iterating on early.
 
 **Day 3 — add employers.** Put 10–30 companies you'd genuinely join into `config/portals.yml`.

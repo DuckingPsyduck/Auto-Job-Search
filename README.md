@@ -172,6 +172,7 @@ ajs tracked     your employer boards only
 ajs remote      remote-job feeds only
 ajs enrich      fetch employer records for the day's survivors
 ajs score       score the day's postings against your CVs
+ajs keywords    which keywords are working, and what the scan is missing
 ajs report      build the workbook
 ajs config      print the resolved configuration
 ```

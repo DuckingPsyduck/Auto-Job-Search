@@ -73,6 +73,7 @@ Run from the repo root. Every command takes `--config <path>` and `--date YYYY-M
 | `node bin/ajs.mjs remote` | Pulls the configured remote-job feeds | `.work/ranked-remote-{date}.jsonl` |
 | `node bin/ajs.mjs enrich` | For survivors only: fetches the employer's own record | `.work/enriched-{date}.jsonl`, `.work/cache/jd/{id}.txt` |
 | `node bin/ajs.mjs score` | Scores cached descriptions against the user's CVs | updates `.work/enriched-{date}.jsonl` |
+| `node bin/ajs.mjs keywords` | Which target keywords matched today, and which discarded titles look like the user's work | prints a report |
 | `node bin/ajs.mjs report` | Builds the Excel workbook (needs Python) | `output/*.xlsx` |
 
 Useful flags: `--chunks N` (sweep only a few dataset chunks, for a quick check), `--limit N`

@@ -104,4 +104,41 @@ def test_without_pypdf_the_message_says_how_to_fix_it(tmp_path, monkeypatch):
 def test_titles_are_proposed_from_whatever_format(tmp_path):
     (tmp_path / "cv.txt").write_text("Senior Data Engineer\nSystems Administrator", encoding="utf-8")
     texts, _ = read_cv_dir(tmp_path)
-    assert "senior data engineer" in suggest_titles(texts)
+    # Seniority is stripped: employers post both, and one keyword should find both.
+    assert suggest_titles(texts) == ["data engineer", "systems administrator"]
+
+
+def test_titles_are_found_in_any_field():
+    # The old extractor matched a hard-coded list of IT roles, so a nurse's CV proposed nothing.
+    cases = {
+        "Registered Nurse - Med/Surg. Charge nurse. Reported to the Nurse Manager.":
+            {"registered nurse", "charge nurse", "nurse manager"},
+        "Journeyman Electrician. Diesel Mechanic II. Warehouse supervisor.":
+            {"journeyman electrician", "diesel mechanic", "warehouse supervisor"},
+        "High School Mathematics Teacher. Curriculum Coordinator for the district.":
+            {"high school mathematics teacher", "curriculum coordinator"},
+    }
+    for text, expected in cases.items():
+        assert expected <= set(suggest_titles({"cv": text})), text
+
+
+def test_an_employer_name_does_not_become_part_of_the_title():
+    assert suggest_titles({"cv": "Senior Data Engineer at Acme Systems Administrator"}) == [
+        "data engineer",
+        "systems administrator",
+    ]
+
+
+def test_prose_about_a_job_is_not_a_job_title():
+    text = "I am responsible for the team and have 8 years of experience supporting clients."
+    assert suggest_titles({"cv": text}) == []
+
+
+def test_a_damaged_pdf_does_not_stop_onboarding(tmp_path):
+    # Regression: pypdf raises its own error types, which once escaped and crashed `ajs init`.
+    pytest.importorskip("pypdf")
+    (tmp_path / "broken.pdf").write_bytes(b"not really a pdf")
+    (tmp_path / "good.txt").write_text("Registered Nurse", encoding="utf-8")
+    texts, unreadable = read_cv_dir(tmp_path)
+    assert "good.txt" in texts, "one bad file must not lose the readable ones"
+    assert "broken.pdf" in unreadable

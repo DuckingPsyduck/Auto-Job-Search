@@ -30,6 +30,7 @@ Commands:
   remote     pull the configured remote-job feeds
   enrich     fetch each survivor's record from the employer's ATS
   score      score the day's postings against your CVs
+  keywords   which target keywords are working, and what the scan is missing
   report     build the Excel workbook for a run
   config     print the resolved configuration (paths, windows, thresholds)
 
@@ -201,6 +202,11 @@ ${result.out || ''}
     }
     case 'report': {
       return runReport(cfg, args, log);
+    }
+    case 'keywords': {
+      const argv = ['keywords'];
+      if (args.date) argv.push('--date', args.date);
+      return runPython(cfg, argv, log, 'keywords');
     }
     case 'daily': {
       const date = args.date || today();

@@ -12,6 +12,7 @@ import { walkDataset } from './dataset.mjs';
 import { buildTitleMatcher, buildLaneMatcher, buildCoverage, classify } from './filters.mjs';
 import { today, workPath } from './config.mjs';
 import { runLive } from './live.mjs';
+import { UnmatchedTitles } from './unmatched.mjs';
 
 /** ISO date N days before `date`. */
 export function daysBefore(date, n) {
@@ -57,6 +58,7 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
   const counts = { seen: 0, shortlist: 0, check: 0, dropped: 0, duplicates: 0, irrelevant: 0 };
   const lanes = {};
   const seenIds = new Set();
+  const unmatched = new UnmatchedTitles();
 
   log(`sweep ${date}: window ${since} .. ${date} (${days}d), keywords ${ctx.titles.positive.length}`);
 
@@ -77,6 +79,7 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
       // signal; they are counted, not written. Everything a keyword touched is kept on disk.
       if (row.verdict === 'dropped' && !row.title_relevant) {
         counts.irrelevant++;
+        unmatched.add(row.title);
         return;
       }
       counts[row.verdict]++;
@@ -105,5 +108,7 @@ export async function runSweep(cfg, { date = today(), sinceDays, limitChunks, lo
   );
   if (stats.errors.length) log(`chunk errors: ${stats.errors.length} (${stats.errors[0]})`);
 
-  return { date, out: outPath, counts, lanes, errors: stats.errors };
+  const unmatchedPath = unmatched.write(cfg, date);
+
+  return { date, out: outPath, counts, lanes, unmatched: unmatchedPath, errors: stats.errors };
 }

@@ -51,10 +51,19 @@ Tomorrow's scores improve, and future tailoring uses it without overreaching.
 | Many "pay below floor" | Your floor may be above your market | Reconsider or accept fewer results |
 | Almost nothing kept | Keywords too narrow | Add variants; see below |
 
-**Tune keywords.** They matter more than every other setting combined. Signs they're wrong:
-under ten shortlist rows a day (too narrow), or a shortlist full of jobs you'd never take (too
-broad). Add the variants employers actually use — "analytics engineer" and "data platform
-engineer" are different searches from "data engineer".
+**Tune keywords.** They matter more than every other setting combined, so don't guess:
+
+```bash
+ajs keywords
+```
+
+It lists every keyword with the number of postings it matched today, and then the titles the
+scan threw away that share vocabulary with your searches — the "analytics engineer" you never
+thought to look for. Add the ones that are your work to `profile.targets[].keywords`; they are
+titles other people hold, not claims about your experience.
+
+A keyword at zero for one day means nothing. A week of zeros means the phrase is not what
+employers call the job.
 
 **Add employers.** Any company you'd genuinely join goes in `config/portals.yml`. The tracked
 scan reads their board directly, so you see postings on day one with exact dates.
