@@ -118,6 +118,10 @@ export function belowPayFloor(posting, floor) {
 export function classify(posting, ctx) {
   const { titles, lanes, geo, coverage, cfg, since } = ctx;
 
+  // Assigned before the title gate: the dropped sheet shows a lane too, and "which lane is my
+  // over-broad exclusion eating" is exactly the question that sheet exists to answer.
+  posting.lane = lanes.lane(posting.title);
+
   const title = titles.match(posting.title);
   if (!title.ok) {
     posting.verdict = 'dropped';
@@ -130,7 +134,6 @@ export function classify(posting, ctx) {
   posting.title_relevant = true;
   posting.title_match = title.hits;
   posting.seniority = titles.isSenior(posting.title) ? 'senior+' : '';
-  posting.lane = lanes.lane(posting.title);
 
   // Discovery window. For dataset rows this is first_seen, a proxy; enrichment replaces it
   // with the employer's own date before anything is reported as "posted today".

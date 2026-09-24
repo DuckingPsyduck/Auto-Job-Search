@@ -45,7 +45,7 @@ JSON file — see `fixtures/demo-answers.json`.
 
 `init` asks what the tool cannot infer — your target roles, where you will and won't work, a
 pay floor, clearance status — and reads your CV files to propose the keywords it searches on.
-Put your CV masters (`.docx`) in `private/cv/` before running it, and the suggestions get much
+Put your CV masters in `private/cv/` first — `.docx`, `.pdf`, `.txt` or `.md` — and the suggestions get much
 better.
 
 Everything it writes lands in two places: `output/` for the workbook you read, and `.work/` for
@@ -200,6 +200,10 @@ Flags: `--date YYYY-MM-DD`, `--since N` (discovery window), `--chunks N` (sample
   depends on nobody. Set `sources.full_sweep.engine: live` to make that the normal path.
 - **Its `first_seen` date lags the employer's.** That's why enrichment exists, and why the
   discovery window runs wider than the reporting window.
+- **The skill vocabulary is IT-shaped out of the box.** `config/ats-vocab.yml` carries ~122
+  technical terms, so a nurse or a teacher will see lower fit percentages than the postings
+  deserve until they add their field's vocabulary to that file. Discovery and ranking are
+  unaffected; only the fit score is.
 - **Location terms are US-centric out of the box.** `config/geo-terms.json` is editable, and
   both the Node and Python classifiers read from it.
 - **Excel reports and CV scoring need Python.** Scanning does not.

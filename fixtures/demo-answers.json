@@ -22,6 +22,7 @@
   "target_max": 150000,
 
   "cv_dir": "private/cv",
+  "exclude_leadership": "y",
 
   "archetypes": [
     {

@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
 import { runInit } from '../src/node/init.mjs';
 import { loadConfig } from '../src/node/config.mjs';
+import { buildLaneMatcher } from '../src/node/filters.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ANSWERS = JSON.parse(readFileSync(join(ROOT, 'fixtures', 'demo-answers.json'), 'utf8'));
@@ -140,4 +141,51 @@ test('CV keyword suggestions read real .docx files when Python is available', as
   const result = await runInit({ configDir, answers: { ...ANSWERS, cv_dir: cvDir } });
   assert.equal(result.cvDir, cvDir, 'the CV folder is recorded and created');
   assert.ok(existsSync(cvDir));
+});
+
+test('lanes are generated from the user’s own target roles', async t => {
+  const { dir, configDir } = scratchConfigDir();
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  await runInit({
+    configDir,
+    answers: {
+      ...ANSWERS,
+      cv_dir: join(dir, 'cv'),
+      archetypes: [
+        { name: 'Registered Nurse', keywords: ['registered nurse', 'rn', 'charge nurse'] },
+        { name: 'Clinical Educator', keywords: ['nurse educator'] },
+      ],
+    },
+  });
+
+  const cfg = loadConfig(join(configDir, 'scan-config.yml'));
+  assert.deepEqual(cfg.lanes.order, ['registered_nurse', 'clinical_educator', 'other']);
+  assert.equal(cfg.lanes.labels.registered_nurse, 'Registered Nurse');
+  assert.equal(cfg.lanes.patterns.other, '.*', 'the catch-all survives');
+
+  // The shipped example describes one particular job search; nobody else should inherit it.
+  assert.ok(!cfg.lanes.order.includes('sysadmin'), 'no leftover lanes from the example file');
+
+  const lanes = buildLaneMatcher(cfg);
+  assert.equal(lanes.lane('Charge Nurse, Med/Surg'), 'registered_nurse');
+  assert.equal(lanes.lane('Nurse Educator (Oncology)'), 'clinical_educator');
+  assert.equal(lanes.lane('Warehouse Associate'), 'other');
+  // "rn" must not match inside a word: that is why the generated patterns carry \b.
+  assert.equal(lanes.lane('Marketing Intern'), 'other');
+});
+
+test('leadership titles are excluded only when the user asks', async t => {
+  const { dir, configDir } = scratchConfigDir();
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const base = { ...ANSWERS, cv_dir: join(dir, 'cv') };
+
+  await runInit({ configDir, answers: { ...base, exclude_leadership: 'y' } });
+  let cfg = loadConfig(join(configDir, 'scan-config.yml'));
+  assert.ok(cfg.titles.extra_negative.includes('director'));
+
+  await runInit({ configDir, force: true, answers: { ...base, exclude_leadership: 'n' } });
+  cfg = loadConfig(join(configDir, 'scan-config.yml'));
+  assert.ok(!cfg.titles.extra_negative.includes('director'), 'a Director of Nursing search still works');
+  assert.ok(cfg.titles.extra_negative.includes('intern'), 'internships stay excluded either way');
 });

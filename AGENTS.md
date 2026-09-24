@@ -49,7 +49,8 @@ cp config/portals.example.yml config/portals.yml     # optional: employers to wa
 ```
 
 `config/profile.yml` is the only file with personal data and is gitignored. The pipeline
-refuses to run while it still contains `{{PLACEHOLDER}}` values. CV masters (`.docx`) go in the
+refuses to run while it still contains `{{PLACEHOLDER}}` values. CV masters (`.docx`, `.pdf`,
+`.txt` or `.md`) go in the
 folder named by `paths.cv_dir`, default `private/cv/`.
 
 **What the user must decide, and you should ask for if missing:** target roles and the title

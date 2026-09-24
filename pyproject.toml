@@ -11,7 +11,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dev = ["pytest>=8.0", "ruff>=0.6", "pypdf>=4.0"]
+pdf = ["pypdf>=4.0"]          # read CV masters that are only available as PDF
 
 [project.scripts]
 ajs-py = "ajs.cli:main"

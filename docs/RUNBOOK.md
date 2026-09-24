@@ -109,7 +109,7 @@ down. Re-running the day is cheap because descriptions are cached.
 | `.work/cache/jd/{id}.txt` | Cached job descriptions; re-running a day costs nothing |
 | `.work/cache/chunks/` | Cached index chunks (~70 MB), refreshed daily |
 | `config/profile.yml` | You. Never committed |
-| `private/cv/*.docx` | Your CV masters. Never committed |
+| `private/cv/*` | Your CV masters (.docx, .pdf, .txt, .md). Never committed |
 
 Deleting `.work/` is always safe; it rebuilds.
 

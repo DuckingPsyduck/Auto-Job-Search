@@ -25,7 +25,9 @@ thirty minutes.
 
 ## Before you start
 
-**Gather your CV files.** Put every `.docx` master in `private/cv/`. If you keep one CV, that's
+**Gather your CV files.** Put every master in `private/cv/` — `.docx`, `.pdf`, `.txt` or `.md`.
+PDFs need `pip install "auto-job-search[pdf]"`; a scanned PDF with no text layer will be
+reported as unreadable rather than silently skipped. If you keep one CV, that's
 fine; if you keep several for different kinds of role, better — the scorer picks the best fit per
 posting and uses the union of all of them as the tailoring ceiling.
 
@@ -66,6 +68,14 @@ A posting whose stated maximum falls below your floor is dropped. Two cautions: 
 market rather than your current salary, and remember many postings state no range at all, so
 those are never dropped on pay.
 
+### Leadership titles
+
+`Exclude director / VP / chief-level titles from results?` Answer `y` for an
+individual-contributor search and those words are added to `titles.extra_negative`, so
+"Director of Engineering" is dropped with the reason "excluded title keyword". Answer `n` if you
+are aiming at those roles — otherwise the scan quietly drops your best postings. You can change
+it later in `scan-config.yml`; internships are excluded either way.
+
 ### Target roles and keywords
 
 **This is the most important answer.** Keywords decide what the scan sees; everything downstream
@@ -101,6 +111,10 @@ ajs init --answers answers.json
 `fixtures/demo-answers.json` is a working example: one key per question, and an `archetypes` list
 of `{name, keywords, cv}`. Anything you leave out falls back to the same default the prompt
 would have offered.
+
+Your target roles become the workbook's lanes: one lane per role, matched on that role's own
+keywords, plus an `other` catch-all. That is what groups a day's postings, so if the grouping
+looks wrong, edit `lanes.patterns` in `scan-config.yml` — it is yours, not a shipped default.
 
 ## First run
 

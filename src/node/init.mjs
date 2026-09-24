@@ -43,6 +43,53 @@ function suggestFromCvs(python, cvDir) {
 const list = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean);
 const yes = s => /^y(es)?$/i.test(String(s || '').trim());
 
+/** The whole `lanes:` block in the example file: the key, then every indented line under it. */
+const LANES_BLOCK_RX = new RegExp('^lanes:\\n(?:(?:[ \\t].*)?\\n)*', 'm');
+
+/** A YAML-safe key for a target role: "Registered Nurse" -> registered_nurse. */
+const laneKey = name => String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'role';
+
+/**
+ * Build the `lanes:` block from the user's own target roles.
+ *
+ * Lanes are how the workbook groups a day's postings. Shipping the example file's lanes to
+ * everyone put every row of a nurse's workbook under "Sysadmin / DBA / SRE"'s neighbour, the
+ * catch-all — technically fine, useless to read. One lane per target role, matched on that
+ * role's own keywords, plus a real "other" for everything else.
+ */
+export function lanesBlock(archetypes) {
+  const escape = t => String(t).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const seen = new Set();
+  const lanes = [];
+  for (const a of archetypes) {
+    let key = laneKey(a.name);
+    while (seen.has(key)) key += '_2';
+    seen.add(key);
+    // Case-insensitive de-duplication, because a role's name is usually also one of its
+    // keywords. Word boundaries matter here: "rn" unanchored also matches "Intern".
+    const terms = new Map();
+    for (const term of [a.name, ...a.keywords]) {
+      const clean = String(term).trim();
+      if (clean) terms.set(clean.toLowerCase(), escape(clean));
+    }
+    lanes.push({ key, label: a.name, pattern: `\\b(${[...terms.values()].join('|')})\\b` });
+  }
+  const q = v => JSON.stringify(String(v));
+  return [
+    'lanes:',
+    '  # Postings are bucketed by title so the workbook groups by the kind of work. These were',
+    '  # generated from your target roles; edit freely. `other` is the catch-all and stays last.',
+    `  order: [${[...lanes.map(l => l.key), 'other'].join(', ')}]`,
+    '  labels:',
+    ...lanes.map(l => `    ${l.key}: ${q(l.label)}`),
+    '    other: "Other"',
+    '  patterns:',
+    ...lanes.map(l => `    ${l.key}: ${q(l.pattern)}`),
+    "    other: '.*'                           # fallback; keep last in `order`",
+    '',
+  ].join('\n');
+}
+
 /**
  * @param {object} [opts]
  * @param {string} [opts.configDir] where to write the two config files
@@ -115,7 +162,8 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
 
   // 5. CVs and keywords -----------------------------------------------------------------
   const defaultCvDir = join(REPO_ROOT, 'private', 'cv');
-  const cvDir = resolve(await ask('Folder holding your CV .docx files:', defaultCvDir, 'cv_dir'));
+  const cvDir = resolve(await ask(
+    'Folder holding your CV files (.docx, .pdf, .txt, .md):', defaultCvDir, 'cv_dir'));
   mkdirSync(cvDir, { recursive: true });
 
   const python = findPython();
@@ -129,7 +177,11 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
     if (suggestions.titles.length) say(`Roles found: ${suggestions.titles.join(', ')}\n`);
     if (suggestions.skills.length) say(`Skills found: ${suggestions.skills.slice(0, 12).join(', ')}\n`);
   } else if (python) {
-    say('\nNo .docx CVs found in that folder — you can add them later and re-run init.\n');
+    say('\nNo CV found in that folder — you can add one later and re-run init.\n');
+  }
+  // A CV that failed to parse is indistinguishable from an empty folder unless we say so.
+  for (const [name, why] of Object.entries(suggestions?.unreadable || {})) {
+    say(`  could not read ${name}: ${why}\n`);
   }
 
   // Answers may supply archetypes directly: [{name, keywords: [...], cv}]
@@ -155,6 +207,12 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
     rl?.close();
     throw new Error('at least one target role is required — the scanners match on its keywords');
   }
+
+  // The shipped exclusions assume an individual-contributor search. Someone targeting a
+  // Director of Nursing would have watched the scan drop their best postings as "excluded
+  // title keyword", so this is asked rather than assumed.
+  const excludeLeadership = yes(await ask(
+    '\nExclude director / VP / chief-level titles from results? (y/n)', 'y', 'exclude_leadership'));
 
   await rl?.close();
 
@@ -204,9 +262,15 @@ This writes config/profile.yml (your details, never committed) and config/scan-c
   // The example config carries its documentation in comments, so copy it and patch the few
   // values onboarding knows, rather than regenerating it and losing the guidance.
   const example = readFileSync(join(configDir, 'scan-config.example.yml'), 'utf8');
+  const negatives = excludeLeadership
+    ? ['intern', 'internship', 'director', 'vice president', 'chief', 'head of']
+    : ['intern', 'internship'];
   const scanConfig = example
     .replace('{{CONTACT_EMAIL}}', email || 'you@example.com')
-    .replace(/^(\s*cv_dir:\s*).*$/m, `$1${JSON.stringify(cvDir)}`);
+    .replace(/^(\s*cv_dir:\s*).*$/m, `$1${JSON.stringify(cvDir)}`)
+    .replace(/^(\s*extra_negative:\s*).*$/m, `$1[${negatives.map(n => JSON.stringify(n)).join(', ')}]`)
+    // The example's lanes describe one person's search; these describe the user's.
+    .replace(LANES_BLOCK_RX, `${lanesBlock(archetypes)}\n`);
   writeFileSync(scanPath, scanConfig, 'utf8');
 
   return { profilePath, scanPath, cvDir, python: Boolean(python), archetypes: archetypes.length,

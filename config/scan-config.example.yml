@@ -16,7 +16,7 @@ paths:
   portals: config/portals.yml               # boards to scan (see portals.example.yml)
   geo_terms: config/geo-terms.json
   ats_vocab: config/ats-vocab.yml
-  cv_dir: private/cv                        # candidate's .docx CV masters (gitignored)
+  cv_dir: private/cv                        # CV masters: .docx, .pdf, .txt, .md (gitignored)
   tracker: private/applications.md          # optional; used only for "applied here before"
   output_dir: output                        # gitignored
   outputs:
@@ -56,7 +56,6 @@ windows:
 titles:
   # The scanners keep a posting when a positive keyword matches the title and no negative does.
   # Keep this list tight: it is the single biggest lever on result quality.
-  positive_from_portals: true               # use portals.yml title_filter.positive as the base
   extra_positive: []
   extra_negative: [intern, internship, director, "vice president", chief, "head of"]
   seniority_flag: '\b(senior|sr\.?|lead|staff|principal|manager|head of|fellow)\b'

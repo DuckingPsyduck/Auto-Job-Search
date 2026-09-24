@@ -76,7 +76,11 @@ def _score(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     scorer = Scorer.from_config(cfg)
     if not scorer.ready:
-        print(f"no CV documents in {cfg.paths['cv_dir']} — add .docx masters and retry", file=sys.stderr)
+        cv_dir = cfg.paths["cv_dir"]
+        print(f"no readable CV in {cv_dir} — add a .docx, .pdf, .txt or .md master", file=sys.stderr)
+        # A CV that failed to parse looks identical to an empty folder from here. Say which.
+        for name, why in getattr(scorer, "unreadable", {}).items():
+            print(f"  {name}: {why}", file=sys.stderr)
         return 1
 
     if args.jd_file:

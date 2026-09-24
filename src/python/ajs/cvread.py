@@ -4,9 +4,13 @@ Used by onboarding: a new user should not have to invent search keywords, and ke
 single biggest lever on result quality. We read what their CV already says, match it against the
 shared skill vocabulary, and propose role titles seen in the documents.
 
-Only .docx is parsed (the format candidates actually keep masters in). Text is pulled straight
-from the XML rather than through a dependency: a .docx is a zip with one document part, and a
-run of text can be split across several <w:t> elements.
+.docx text is pulled straight from the XML rather than through a dependency: a .docx is a zip
+with one document part, and a run of text can be split across several <w:t> elements. Plain text
+(.txt, .md) is read as-is.
+
+PDF is the format people most often have and least often can export from, so it is supported —
+but a PDF's text needs a real parser, so it requires `pypdf` (`pip install "auto-job-search[pdf]"`).
+Without it, PDFs are skipped and `unreadable` says why, rather than the folder appearing empty.
 """
 from __future__ import annotations
 
@@ -45,17 +49,51 @@ def docx_text(path: str | Path) -> str:
     return "\n".join(lines)
 
 
-def read_cv_dir(cv_dir: str | Path) -> dict[str, str]:
-    """{filename: text} for every readable .docx in a directory (Word lock files skipped)."""
+def pdf_text(path: str | Path) -> str:
+    """Plain text of a PDF. Raises ImportError when pypdf is not installed."""
+    from pypdf import PdfReader  # optional dependency; imported where it is needed
+
+    reader = PdfReader(str(path))
+    pages = [page.extract_text() or "" for page in reader.pages]
+    return "\n".join(line for line in "\n".join(pages).splitlines() if line.strip())
+
+
+#: Extensions we attempt, in the order a folder listing is walked.
+READERS = {
+    ".docx": docx_text,
+    ".pdf": pdf_text,
+    ".txt": lambda p: Path(p).read_text(encoding="utf-8", errors="replace"),
+    ".md": lambda p: Path(p).read_text(encoding="utf-8", errors="replace"),
+}
+
+
+def read_cv_dir(cv_dir: str | Path) -> tuple[dict[str, str], dict[str, str]]:
+    """
+    Read every CV in a directory.
+
+    Returns ({filename: text}, {filename: why it could not be read}). The second half matters:
+    a CV that silently failed to parse looks exactly like no CV at all, and the user would be
+    left wondering why their fit scores are blank.
+    """
     out: dict[str, str] = {}
-    for path in sorted(Path(cv_dir).glob("*.docx")):
-        if path.name.startswith("~$"):
+    unreadable: dict[str, str] = {}
+    for path in sorted(Path(cv_dir).iterdir() if Path(cv_dir).is_dir() else []):
+        reader = READERS.get(path.suffix.lower())
+        if reader is None or path.name.startswith("~$"):  # ~$ is a Word lock file
             continue
         try:
-            out[path.name] = docx_text(path)
-        except (zipfile.BadZipFile, KeyError):
+            text = reader(path)
+        except ImportError:
+            unreadable[path.name] = 'PDF support needs pypdf: pip install "auto-job-search[pdf]"'
             continue
-    return out
+        except (zipfile.BadZipFile, KeyError, OSError, ValueError) as err:
+            unreadable[path.name] = f"{type(err).__name__}: {err}"
+            continue
+        if text.strip():
+            out[path.name] = text
+        else:
+            unreadable[path.name] = "no text found (a scanned image, or an empty file)"
+    return out, unreadable
 
 
 def suggest_titles(texts: dict[str, str], limit: int = 12) -> list[str]:
@@ -81,9 +119,10 @@ def suggest_skills(texts: dict[str, str], vocab_path: str | Path, limit: int = 3
 
 def summarize(cv_dir: str | Path, vocab_path: str | Path) -> dict:
     """Everything onboarding needs from a CV folder, in one call."""
-    texts = read_cv_dir(cv_dir)
+    texts, unreadable = read_cv_dir(cv_dir)
     return {
         "files": sorted(texts),
+        "unreadable": unreadable,
         "titles": suggest_titles(texts),
         "skills": suggest_skills(texts, vocab_path),
         "chars": {name: len(text) for name, text in texts.items()},

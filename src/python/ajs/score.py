@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -97,11 +97,13 @@ class Scorer:
     min_terms: int = 10
     apply_at: int = 75
     maybe_at: int = 65
+    #: {filename: why} for CVs found but not parseable. Reported, never silently ignored.
+    unreadable: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_config(cls, cfg) -> Scorer:
         vocab = load_vocab(cfg.paths["ats_vocab"])
-        cvs = read_cv_dir(cfg.paths["cv_dir"]) if Path(cfg.paths["cv_dir"]).is_dir() else {}
+        cvs, unreadable = read_cv_dir(cfg.paths["cv_dir"])
         cv_terms = {name: terms_in(text, vocab) for name, text in cvs.items()}
         union = set().union(*cv_terms.values()) if cv_terms else set()
         union |= terms_in(confirmed_text(cfg.profile), vocab)
@@ -111,6 +113,7 @@ class Scorer:
             vocab=vocab,
             cv_terms=cv_terms,
             union_terms=union,
+            unreadable=unreadable,
             min_terms=int(scoring.get("min_terms_for_reliable_score", 10)),
             apply_at=int(rule.get("apply_at", 75)),
             maybe_at=int(rule.get("maybe_at", 65)),
