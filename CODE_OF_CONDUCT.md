@@ -41,9 +41,13 @@ comments — and anywhere someone is representing the project in public.
 
 ## Reporting
 
-If someone's behavior is a problem, report it to the maintainers at
-**{{MAINTAINER_CONTACT}}**. For anything involving personal data or safety, use GitHub's private
-reporting rather than a public issue.
+If someone's behavior is a problem, report it privately through GitHub — **Report content** on
+the offending comment, issue or pull request, or the **Report a vulnerability** form under this
+repository's Security tab for anything that exposes personal data. Both reach the maintainers
+without the report being public.
+
+Please don't open a public issue about someone's conduct. It escalates the thing you are trying
+to stop, and it puts whoever was affected in the middle of it.
 
 Reports are read by the maintainers, kept confidential, and answered. You will not be asked to
 confront the person yourself, and reporting in good faith will never be held against you — it
