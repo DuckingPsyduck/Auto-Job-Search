@@ -10,7 +10,7 @@
 version: 1
 
 paths:
-  root: .                                   # repo root; env CAREERKIT_ROOT overrides
+  root: .                                   # repo root; env AJS_ROOT overrides
   work_dir: .work                           # scan JSON, fetched job descriptions (gitignored)
   profile: config/profile.yml
   portals: config/portals.yml               # boards to scan (see portals.example.yml)
