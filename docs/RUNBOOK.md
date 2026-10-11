@@ -14,7 +14,7 @@ ajs daily
 One command, about a minute. It runs discovery from all three sources, enriches the survivors,
 scores them against your CVs, and writes the workbook.
 
-**Then, in the workbook:**
+**Then, in the workbook** (every sheet and column: [WORKBOOK.md](WORKBOOK.md)):
 
 1. **Open the Shortlist sheet.** It's sorted by call, then by tailored fit. Start at the top.
 2. **Read the `apply` rows first.** For each: does the location work, does the pay clear your

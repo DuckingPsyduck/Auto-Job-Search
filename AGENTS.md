@@ -129,6 +129,9 @@ glance at; do not quietly treat them as either eligible or foreign.
 
 ---
 
+Column-by-column documentation of the workbook itself is in
+[docs/WORKBOOK.md](docs/WORKBOOK.md); point the user there rather than explaining each column.
+
 ## 4. Presenting a day's results
 
 Group by `call`, lead with `apply`. For each posting give: company, title, location, pay if
