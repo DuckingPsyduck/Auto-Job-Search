@@ -16,7 +16,7 @@
     "sweep": "node bin/ajs.mjs sweep",
     "enrich": "node bin/ajs.mjs enrich",
     "report": "node bin/ajs.mjs report",
-    "test": "node --test \"tests/*.test.mjs\"",
+    "test": "node --test",
     "test:py": "python -m pytest tests -q",
     "privacy": "node tools/privacy-check.mjs",
     "check": "npm test && npm run privacy"
